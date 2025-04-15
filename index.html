@@ -1,0 +1,114 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>號碼計數器</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    .number {
+      display: inline-block;
+      width: 50px;
+      height: 50px;
+      line-height: 50px;
+      margin: 4px;
+      text-align: center;
+      border: 2px solid #aaa;
+      border-radius: 8px;
+      cursor: pointer;
+      background-color: #f0f0f0;
+      user-select: none;
+      font-size: 16px;
+    }
+    .active {
+      background-color: #3399ff;
+      color: white;
+      font-weight: bold;
+    }
+    #controls {
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    #stats {
+      margin-top: 20px;
+      white-space: pre-wrap;
+      font-size: 15px;
+    }
+    #note {
+      width: 100%;
+      height: 100px;
+      margin-top: 20px;
+      font-size: 15px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body>
+  <h2 style="text-align:center;">點選號碼：01~39</h2>
+  <div id="controls">
+    <button onclick="resetAll()">清除所有記錄</button>
+  </div>
+  <div id="numbers"></div>
+  <div id="stats"></div>
+  <textarea id="note" placeholder="備註區：可輸入自由內容..."></textarea>
+
+  <script>
+    const container = document.getElementById("numbers");
+    const statsDiv = document.getElementById("stats");
+    const clickCounts = {};
+
+    function updateStats() {
+      let output = "已選號碼統計：\n";
+      let hasAny = false;
+      Object.keys(clickCounts).forEach(num => {
+        if (clickCounts[num] > 0) {
+          output += `${num} - ${clickCounts[num]} 次\n`;
+          hasAny = true;
+        }
+      });
+      statsDiv.textContent = hasAny ? output : "目前尚未選取任何號碼";
+    }
+
+    function resetAll() {
+      Object.keys(clickCounts).forEach(num => {
+        clickCounts[num] = 0;
+        const div = document.getElementById("btn-" + num);
+        div.classList.remove("active");
+        div.textContent = num;
+      });
+      updateStats();
+      document.getElementById("note").value = "";
+    }
+
+    for (let i = 1; i <= 39; i++) {
+      const num = i.toString().padStart(2, '0');
+      const div = document.createElement("div");
+      div.className = "number";
+      div.id = "btn-" + num;
+      div.textContent = num;
+      clickCounts[num] = 0;
+
+      div.addEventListener("click", () => {
+        clickCounts[num]++;
+        div.classList.add("active");
+        div.textContent = `${num} (${clickCounts[num]})`;
+        updateStats();
+      });
+
+      container.appendChild(div);
+      if (i % 10 === 0) container.appendChild(document.createElement("br"));
+    }
+
+    updateStats();
+  </script>
+</body>
+</html>
