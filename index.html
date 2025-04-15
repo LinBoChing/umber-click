@@ -31,11 +31,11 @@
       align-items: center;
       justify-content: center;
     }
-    .active {
-      background-color: #3399ff;
-      color: white;
-      font-weight: bold;
-    }
+    .count-1 { background-color: #3399ff; color: white; }
+    .count-2 { background-color: #33cc33; color: white; }
+    .count-3 { background-color: #ff9933; color: white; }
+    .count-more { background-color: #cc3333; color: white; }
+
     #controls {
       margin-bottom: 15px;
       text-align: center;
@@ -65,12 +65,13 @@
   <div id="numbers" class="grid"></div>
   <div id="stats"></div>
   <div id="unselected"></div>
-  <textarea id="note" placeholder="備註區：可輸入自由內容..."></textarea>
+  <textarea id="note" placeholder="備註區：可輸入自由內容..." oninput="saveNote()"></textarea>
 
   <script>
     const container = document.getElementById("numbers");
     const statsDiv = document.getElementById("stats");
     const unselectedDiv = document.getElementById("unselected");
+    const noteField = document.getElementById("note");
     const clickCounts = {};
 
     function updateStats() {
@@ -79,27 +80,52 @@
       let unselected = [];
 
       Object.keys(clickCounts).forEach(num => {
-        if (clickCounts[num] > 0) {
-          output += `${num} - ${clickCounts[num]} 次\n`;
+        const count = clickCounts[num];
+        const div = document.getElementById("btn-" + num);
+        div.className = "number";
+
+        if (count > 0) {
+          output += `${num} - ${count} 次\n`;
           hasAny = true;
+          if (count === 1) div.classList.add("count-1");
+          else if (count === 2) div.classList.add("count-2");
+          else if (count === 3) div.classList.add("count-3");
+          else div.classList.add("count-more");
         } else {
           unselected.push(num);
         }
+
+        div.textContent = count > 0 ? `${num} (${count})` : num;
       });
 
       statsDiv.textContent = hasAny ? output : "目前尚未選取任何號碼";
       unselectedDiv.textContent = "尚未選取的號碼：\n" + unselected.join(" ");
+      saveData();
     }
 
     function resetAll() {
       Object.keys(clickCounts).forEach(num => {
         clickCounts[num] = 0;
-        const div = document.getElementById("btn-" + num);
-        div.classList.remove("active");
-        div.textContent = num;
       });
       updateStats();
-      // 備註不清空
+    }
+
+    function saveData() {
+      localStorage.setItem("clickCounts", JSON.stringify(clickCounts));
+      localStorage.setItem("noteText", noteField.value);
+    }
+
+    function loadData() {
+      const savedCounts = JSON.parse(localStorage.getItem("clickCounts") || "{}");
+      for (let i = 1; i <= 39; i++) {
+        const num = i.toString().padStart(2, '0');
+        clickCounts[num] = savedCounts[num] || 0;
+      }
+      noteField.value = localStorage.getItem("noteText") || "";
+    }
+
+    function saveNote() {
+      localStorage.setItem("noteText", noteField.value);
     }
 
     for (let i = 1; i <= 39; i++) {
@@ -108,18 +134,16 @@
       div.className = "number";
       div.id = "btn-" + num;
       div.textContent = num;
-      clickCounts[num] = 0;
 
       div.addEventListener("click", () => {
         clickCounts[num]++;
-        div.classList.add("active");
-        div.textContent = `${num} (${clickCounts[num]})`;
         updateStats();
       });
 
       container.appendChild(div);
     }
 
+    loadData();
     updateStats();
   </script>
 </body>
