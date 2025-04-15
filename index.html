@@ -40,7 +40,7 @@
       margin-bottom: 15px;
       text-align: center;
     }
-    #stats {
+    #stats, #unselected {
       margin-top: 20px;
       white-space: pre-wrap;
       font-size: 15px;
@@ -64,23 +64,31 @@
   </div>
   <div id="numbers" class="grid"></div>
   <div id="stats"></div>
+  <div id="unselected"></div>
   <textarea id="note" placeholder="備註區：可輸入自由內容..."></textarea>
 
   <script>
     const container = document.getElementById("numbers");
     const statsDiv = document.getElementById("stats");
+    const unselectedDiv = document.getElementById("unselected");
     const clickCounts = {};
 
     function updateStats() {
       let output = "已選號碼統計：\n";
       let hasAny = false;
+      let unselected = [];
+
       Object.keys(clickCounts).forEach(num => {
         if (clickCounts[num] > 0) {
           output += `${num} - ${clickCounts[num]} 次\n`;
           hasAny = true;
+        } else {
+          unselected.push(num);
         }
       });
+
       statsDiv.textContent = hasAny ? output : "目前尚未選取任何號碼";
+      unselectedDiv.textContent = "尚未選取的號碼：\n" + unselected.join(" ");
     }
 
     function resetAll() {
@@ -91,7 +99,7 @@
         div.textContent = num;
       });
       updateStats();
-      // 備註區不清除
+      // 備註不清空
     }
 
     for (let i = 1; i <= 39; i++) {
