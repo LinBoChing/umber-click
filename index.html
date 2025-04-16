@@ -96,19 +96,24 @@
     const historyStack = [];
 
     function updateStats() {
-      let output = "已選號碼統計（由少到多）：\n";
-      let hasAny = false;
-      let unselected = [];
+      let output = "";
+      const groups = {};
 
-      let sorted = Object.entries(clickCounts)
-        .filter(([_, count]) => count > 0)
-        .sort((a, b) => a[1] - b[1]);
-
-      sorted.forEach(([num, count]) => {
-        output += `${num} - ${count} 次\n`;
-        hasAny = true;
+      Object.entries(clickCounts).forEach(([num, count]) => {
+        if (count > 0) {
+          if (!groups[count]) groups[count] = [];
+          groups[count].push(num);
+        }
       });
 
+      const sortedKeys = Object.keys(groups).map(Number).sort((a, b) => a - b);
+      sortedKeys.forEach(count => {
+        output += `${count}次\n${groups[count].join('.')}\n`;
+      });
+
+      statsDiv.textContent = output || "目前尚未選取任何號碼";
+
+      let unselected = [];
       Object.keys(clickCounts).forEach(num => {
         const count = clickCounts[num];
         const div = document.getElementById("btn-" + num);
@@ -127,7 +132,6 @@
         }
       });
 
-      statsDiv.textContent = hasAny ? output : "目前尚未選取任何號碼";
       unselectedDiv.textContent = "尚未選取的號碼：\n" + unselected.join(" ");
       saveData();
     }
