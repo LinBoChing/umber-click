@@ -128,6 +128,7 @@
         const count = clickCounts[num];
         const div = document.getElementById("btn-" + num);
         div.className = "number";
+        div.textContent = num; // 強制將內容設為數字
 
         if (count > 0) {
           if (count === 1) div.classList.add("count-1");
@@ -138,7 +139,6 @@
           div.textContent = `${num} (${count})`;
         } else {
           unselected.push(num);
-          div.textContent = num;
         }
       });
 
