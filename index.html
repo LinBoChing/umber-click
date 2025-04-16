@@ -61,6 +61,7 @@
   <h2 style="text-align:center;">點選號碼：01~39</h2>
   <div id="controls">
     <button onclick="resetAll()">清除所有記錄</button>
+    <button onclick="undoLast()">恢復上一動</button>
   </div>
   <div id="numbers" class="grid"></div>
   <div id="stats"></div>
@@ -73,11 +74,21 @@
     const unselectedDiv = document.getElementById("unselected");
     const noteField = document.getElementById("note");
     const clickCounts = {};
+    const historyStack = [];
 
     function updateStats() {
-      let output = "已選號碼統計：\n";
+      let output = "已選號碼統計（由少到多）：\n";
       let hasAny = false;
       let unselected = [];
+
+      let sorted = Object.entries(clickCounts)
+        .filter(([_, count]) => count > 0)
+        .sort((a, b) => a[1] - b[1]);
+
+      sorted.forEach(([num, count]) => {
+        output += `${num} - ${count} 次\n`;
+        hasAny = true;
+      });
 
       Object.keys(clickCounts).forEach(num => {
         const count = clickCounts[num];
@@ -85,17 +96,16 @@
         div.className = "number";
 
         if (count > 0) {
-          output += `${num} - ${count} 次\n`;
-          hasAny = true;
           if (count === 1) div.classList.add("count-1");
           else if (count === 2) div.classList.add("count-2");
           else if (count === 3) div.classList.add("count-3");
           else div.classList.add("count-more");
+
+          div.textContent = `${num} (${count})`;
         } else {
           unselected.push(num);
+          div.textContent = num;
         }
-
-        div.textContent = count > 0 ? `${num} (${count})` : num;
       });
 
       statsDiv.textContent = hasAny ? output : "目前尚未選取任何號碼";
@@ -107,7 +117,16 @@
       Object.keys(clickCounts).forEach(num => {
         clickCounts[num] = 0;
       });
+      historyStack.length = 0;
       updateStats();
+    }
+
+    function undoLast() {
+      const last = historyStack.pop();
+      if (last && clickCounts[last] > 0) {
+        clickCounts[last]--;
+        updateStats();
+      }
     }
 
     function saveData() {
@@ -137,6 +156,7 @@
 
       div.addEventListener("click", () => {
         clickCounts[num]++;
+        historyStack.push(num);
         updateStats();
       });
 
