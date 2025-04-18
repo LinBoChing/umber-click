@@ -199,5 +199,33 @@
     loadData();
     updateStats();
   </script>
+
+<!-- 新增的號碼輸入區域 -->
+<div style="margin-top: 20px;">
+  <label for="numberInput">貼上號碼（可使用空格、逗號、點號分隔）：</label><br>
+  <textarea id="numberInput" rows="3" style="width: 100%; max-width: 400px;"></textarea><br>
+  <button onclick="applyNumbers()">套用號碼</button>
+</div>
+
+<script>
+function applyNumbers() {
+  const input = document.getElementById("numberInput").value;
+  // 將輸入中的非數字字元換成空格，再用空格分割
+  const cleaned = input.replace(/[^\d]/g, " ").split(/\s+/).map(num => parseInt(num, 10));
+  // 過濾合法的 1~39 號碼
+  const validNumbers = cleaned.filter(num => !isNaN(num) && num >= 1 && num <= 39);
+
+  // 清空現有選擇
+  document.querySelectorAll("input[type='checkbox']").forEach(cb => cb.checked = false);
+
+  // 勾選對應號碼
+  validNumbers.forEach(num => {
+    const padded = num.toString().padStart(2, '0');
+    const checkbox = document.querySelector("input[type='checkbox'][value='" + padded + "']");
+    if (checkbox) checkbox.checked = true;
+  });
+}
+</script>
+
 </body>
 </html>
