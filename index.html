@@ -174,22 +174,25 @@ function pasteFromClipboard() {
 
       const sortedKeys = Object.keys(groups).map(Number).sort((a, b) => a - b);
       sortedKeys.forEach(count => {
-        
+        output += "<span class='group-title'>" + count + "次</span>\n" + groups[count].join(".") + "\n";
+      });
+
+      
+  statsDiv.innerHTML = "";
+  sortedKeys.forEach(count => {
     const groupNumbers = groups[count];
-    output += "<span class='group-title'>" + count + "次</span>\n" + groupNumbers.join(".") + "\n";
     const groupDiv = document.createElement("div");
     const label = document.createElement("span");
     label.className = "group-title";
     label.textContent = count + "次";
+    const numberText = document.createTextNode(" " + groupNumbers.join(" "));
     const btn = createCopyButton(groupNumbers);
     groupDiv.appendChild(label);
-    groupDiv.appendChild(document.createTextNode(" " + groupNumbers.join(" ")));
+    groupDiv.appendChild(numberText);
     groupDiv.appendChild(btn);
     statsDiv.appendChild(groupDiv);
-    
-      });
+  });
 
-      statsDiv.innerHTML = output || "目前尚未選取任何號碼";
 
       let unselected = [];
       Object.keys(clickCounts).forEach(num => {
