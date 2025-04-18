@@ -146,73 +146,67 @@ function pasteFromClipboard() {
     const clickCounts = {};
     const historyStack = [];
 
+    function updateStats() {
+      function createCopyButton(numbers) {
+        const btn = document.createElement("button");
+        btn.textContent = "複製到備註";
+        btn.style.marginLeft = "10px";
+        btn.onclick = () => {
+          const noteField = document.getElementById("note");
+          const existing = noteField.value.trim().split(/\s+/).filter(n => n);
+          const merged = Array.from(new Set([...existing, ...numbers]));
+          noteField.value = merged.join(" ");
+          saveNote();
+        };
+        return btn;
+      }
+
+      let output = "";
+      const groups = {};
+
+      Object.entries(clickCounts).forEach(([num, count]) => {
+        if (count > 0) {
+          if (!groups[count]) groups[count] = [];
+          groups[count].push(num);
+        }
+      });
+
+      const sortedKeys = Object.keys(groups).map(Number).sort((a, b) => a - b);
+      sortedKeys.forEach(count => {
+        
+    const groupNumbers = groups[count];
+    output += "<span class='group-title'>" + count + "次</span>\n" + groupNumbers.join(".") + "\n";
+    const statsTempDiv = document.createElement("div");
+    statsTempDiv.innerHTML = "<span class='group-title'>" + count + "次</span>";
+    const btn = createCopyButton(groupNumbers);
+    statsTempDiv.appendChild(btn);
+    statsDiv.appendChild(statsTempDiv);
     
-function updateStats() {
-  let output = "";
-  const groups = {};
+      });
 
-  function createCopyButton(numbers) {
-    const btn = document.createElement("button");
-    btn.textContent = "複製到備註";
-    btn.style.marginLeft = "10px";
-    btn.onclick = () => {
-      const noteField = document.getElementById("note");
-      const existing = noteField.value.trim().split(/\s+/).filter(n => n);
-      const merged = Array.from(new Set([...existing, ...numbers]));
-      noteField.value = merged.join(" ");
-      saveNote();
-    };
-    return btn;
-  }
+      statsDiv.innerHTML = output || "目前尚未選取任何號碼";
 
-  Object.entries(clickCounts).forEach(([num, count]) => {
-    if (count > 0) {
-      if (!groups[count]) groups[count] = [];
-      groups[count].push(num);
-    }
-  });
+      let unselected = [];
+      Object.keys(clickCounts).forEach(num => {
+        const count = clickCounts[num];
+        const div = document.getElementById("btn-" + num);
+        div.className = "number";
+        div.textContent = num; // 強制將內容設為數字
 
-  const sortedKeys = Object.keys(groups).map(Number).sort((a, b) => a - b);
-  statsDiv.innerHTML = "";
-  sortedKeys.forEach(count => {
-    const numbers = groups[count];
-    const groupDiv = document.createElement("div");
-    const label = document.createElement("span");
-    label.className = "group-title";
-    label.textContent = count + "次";
-    groupDiv.appendChild(label);
+        if (count > 0) {
+          if (count === 1) div.classList.add("count-1");
+          else if (count === 2) div.classList.add("count-2");
+          else if (count === 3) div.classList.add("count-3");
+          else div.classList.add("count-more");
 
-    const numberText = document.createTextNode(" " + numbers.join(" "));
-    groupDiv.appendChild(numberText);
+          div.textContent = `${num} (${count})`;
+        } else {
+          unselected.push(num);
+        }
+      });
 
-    const button = createCopyButton(numbers);
-    groupDiv.appendChild(button);
-
-    statsDiv.appendChild(groupDiv);
-  });
-
-  let unselected = [];
-  Object.keys(clickCounts).forEach(num => {
-    const count = clickCounts[num];
-    const div = document.getElementById("btn-" + num);
-    div.className = "number";
-    div.textContent = num;
-    if (count > 0) {
-      if (count === 1) div.classList.add("count-1");
-      else if (count === 2) div.classList.add("count-2");
-      else if (count === 3) div.classList.add("count-3");
-      else div.classList.add("count-more");
-
-      div.textContent = `${num} (${count})`;
-    } else {
-      unselected.push(num);
-    }
-  });
-
-  unselectedDiv.textContent = "尚未選取的號碼：\\n" + unselected.join(" ");
-  saveData();
-}
-
+      unselectedDiv.textContent = "尚未選取的號碼：\n" + unselected.join(" ");
+      saveData();
     }
 
     function resetAll() {
