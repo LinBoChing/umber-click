@@ -214,13 +214,10 @@ function applyNumbers() {
   const rawNumbers = input.replace(/[^\d]/g, " ").split(/\s+/).map(n => parseInt(n, 10));
   const validNumbers = rawNumbers.filter(n => !isNaN(n) && n >= 1 && n <= 39);
 
-  // 重設所有號碼為 0 次點擊
-  Object.keys(clickCounts).forEach(num => clickCounts[num] = 0);
-
-  // 記錄點擊次數 + 儲存歷史紀錄
+  // 疊加點擊次數，不清空原有選擇
   validNumbers.forEach(num => {
     const padded = num.toString().padStart(2, '0');
-    clickCounts[padded] = 1;
+    clickCounts[padded] = (clickCounts[padded] || 0) + 1;
     historyStack.push(padded);
   });
 
@@ -230,6 +227,4 @@ function applyNumbers() {
 }
 </script>
 
-
-</body>
 </html>
