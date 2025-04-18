@@ -213,12 +213,14 @@ function applyNumbers() {
   const rawNumbers = input.replace(/[^\d]/g, " ").split(/\s+/).map(n => parseInt(n, 10));
   const validNumbers = rawNumbers.filter(n => !isNaN(n) && n >= 1 && n <= 39);
 
-  // 清空所有選取（也觸發 click 模擬取消效果）
+  // 清除所有已選狀態，模擬點擊所有已選的 checkbox 的外層（label 或 container）
   document.querySelectorAll("input[type='checkbox']").forEach(cb => {
-    if (cb.checked) cb.click();  // 模擬點擊取消選取
+    if (cb.checked && cb.closest("label")) {
+      cb.closest("label").click(); // 點擊外層 label 讓樣式改變
+    }
   });
 
-  // 勾選並觸發 click 模擬選取效果
+  // 套用新號碼，模擬點擊外層來啟動反藍效果
   validNumbers.forEach(num => {
     const padded = num.toString().padStart(2, '0');
     const selectors = [
@@ -227,8 +229,8 @@ function applyNumbers() {
     ];
     for (let sel of selectors) {
       const checkbox = document.querySelector(sel);
-      if (checkbox && !checkbox.checked) {
-        checkbox.click(); // 模擬點擊以觸發樣式和事件
+      if (checkbox && checkbox.closest("label")) {
+        checkbox.closest("label").click(); // 點擊外層 label 以觸發樣式
         break;
       }
     }
