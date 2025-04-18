@@ -200,6 +200,7 @@
     updateStats();
   </script>
 
+
 <!-- 新增的號碼輸入區域 -->
 <div style="margin-top: 20px;">
   <label for="numberInput">貼上號碼（可使用空格、逗號、點號分隔）：</label><br>
@@ -213,32 +214,22 @@ function applyNumbers() {
   const rawNumbers = input.replace(/[^\d]/g, " ").split(/\s+/).map(n => parseInt(n, 10));
   const validNumbers = rawNumbers.filter(n => !isNaN(n) && n >= 1 && n <= 39);
 
-  // 清除所有已選狀態，模擬點擊所有已選的 checkbox 的外層（label 或 container）
-  document.querySelectorAll("input[type='checkbox']").forEach(cb => {
-    if (cb.checked && cb.closest("label")) {
-      cb.closest("label").click(); // 點擊外層 label 讓樣式改變
-    }
-  });
+  // 重設所有號碼為 0 次點擊
+  Object.keys(clickCounts).forEach(num => clickCounts[num] = 0);
 
-  // 套用新號碼，模擬點擊外層來啟動反藍效果
+  // 記錄點擊次數 + 儲存歷史紀錄
   validNumbers.forEach(num => {
     const padded = num.toString().padStart(2, '0');
-    const selectors = [
-      "input[type='checkbox'][value='" + num + "']",
-      "input[type='checkbox'][value='" + padded + "']"
-    ];
-    for (let sel of selectors) {
-      const checkbox = document.querySelector(sel);
-      if (checkbox && checkbox.closest("label")) {
-        checkbox.closest("label").click(); // 點擊外層 label 以觸發樣式
-        break;
-      }
-    }
+    clickCounts[padded] = 1;
+    historyStack.push(padded);
   });
+
+  updateStats();
 
   alert("已套用號碼：" + validNumbers.map(n => n.toString().padStart(2, '0')).join("、"));
 }
 </script>
+
 
 </body>
 </html>
