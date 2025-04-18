@@ -213,10 +213,12 @@ function applyNumbers() {
   const rawNumbers = input.replace(/[^\d]/g, " ").split(/\s+/).map(n => parseInt(n, 10));
   const validNumbers = rawNumbers.filter(n => !isNaN(n) && n >= 1 && n <= 39);
 
-  // 清空所有選取
-  document.querySelectorAll("input[type='checkbox']").forEach(cb => cb.checked = false);
+  // 清空所有選取（也觸發 click 模擬取消效果）
+  document.querySelectorAll("input[type='checkbox']").forEach(cb => {
+    if (cb.checked) cb.click();  // 模擬點擊取消選取
+  });
 
-  // 嘗試選取符合的號碼（value 可能是 1 或 01）
+  // 勾選並觸發 click 模擬選取效果
   validNumbers.forEach(num => {
     const padded = num.toString().padStart(2, '0');
     const selectors = [
@@ -225,8 +227,8 @@ function applyNumbers() {
     ];
     for (let sel of selectors) {
       const checkbox = document.querySelector(sel);
-      if (checkbox) {
-        checkbox.checked = true;
+      if (checkbox && !checkbox.checked) {
+        checkbox.click(); // 模擬點擊以觸發樣式和事件
         break;
       }
     }
