@@ -147,19 +147,20 @@ function pasteFromClipboard() {
     const historyStack = [];
 
     function updateStats() {
-      function createCopyButton(numbers) {
-        const btn = document.createElement("button");
-        btn.textContent = "複製到備註";
-        btn.style.marginLeft = "10px";
-        btn.onclick = () => {
-          const noteField = document.getElementById("note");
-          const existing = noteField.value.trim().split(/\s+/).filter(n => n);
-          const merged = Array.from(new Set([...existing, ...numbers]));
-          noteField.value = merged.join(" ");
-          saveNote();
-        };
-        return btn;
-      }
+
+  function createCopyButton(numbers) {
+    const btn = document.createElement("button");
+    btn.textContent = "複製到備註";
+    btn.style.marginLeft = "10px";
+    btn.onclick = () => {
+      const noteField = document.getElementById("note");
+      const existing = noteField.value.trim().split(/\s+/).filter(n => n);
+      const merged = Array.from(new Set([...existing, ...numbers]));
+      noteField.value = merged.join(" ");
+      saveNote();
+    };
+    return btn;
+  }
 
       let output = "";
       const groups = {};
@@ -176,11 +177,15 @@ function pasteFromClipboard() {
         
     const groupNumbers = groups[count];
     output += "<span class='group-title'>" + count + "次</span>\n" + groupNumbers.join(".") + "\n";
-    const statsTempDiv = document.createElement("div");
-    statsTempDiv.innerHTML = "<span class='group-title'>" + count + "次</span>";
+    const groupDiv = document.createElement("div");
+    const label = document.createElement("span");
+    label.className = "group-title";
+    label.textContent = count + "次";
     const btn = createCopyButton(groupNumbers);
-    statsTempDiv.appendChild(btn);
-    statsDiv.appendChild(statsTempDiv);
+    groupDiv.appendChild(label);
+    groupDiv.appendChild(document.createTextNode(" " + groupNumbers.join(" ")));
+    groupDiv.appendChild(btn);
+    statsDiv.appendChild(groupDiv);
     
       });
 
