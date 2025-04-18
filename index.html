@@ -87,7 +87,47 @@
     <button onclick="undoLast()">恢復上一動</button>
   </div>
   <div id="numbers" class="grid"></div>
-  <div id="stats"></div>
+  
+<!-- 新增的號碼輸入區域（移動位置 + 兩個新按鈕） -->
+<div style="margin-top: 20px; text-align: center;">
+  <label for="numberInput"><strong>快速貼上號碼（可使用空格、逗號、點號分隔）：</strong></label><br>
+  <textarea id="numberInput" rows="3" style="width: 100%; max-width: 400px; margin-top: 5px;"></textarea><br>
+  <button onclick="pasteFromClipboard()">貼上剪貼簿</button>
+  <button onclick="clearInput()">清除內容</button>
+  <button onclick="applyNumbers()">套用號碼</button>
+</div>
+
+<script>
+function applyNumbers() {
+  const input = document.getElementById("numberInput").value;
+  const rawNumbers = input.replace(/[^\d]/g, " ").split(/\s+/).map(n => parseInt(n, 10));
+  const validNumbers = rawNumbers.filter(n => !isNaN(n) && n >= 1 && n <= 39);
+
+  // 疊加點擊次數，不清空原有選擇
+  validNumbers.forEach(num => {
+    const padded = num.toString().padStart(2, '0');
+    clickCounts[padded] = (clickCounts[padded] || 0) + 1;
+    historyStack.push(padded);
+  });
+
+  updateStats();
+  alert("已套用號碼：" + validNumbers.map(n => n.toString().padStart(2, '0')).join("、"));
+}
+
+function clearInput() {
+  document.getElementById("numberInput").value = "";
+}
+
+function pasteFromClipboard() {
+  navigator.clipboard.readText().then(text => {
+    document.getElementById("numberInput").value = text;
+  }).catch(err => {
+    alert("無法讀取剪貼簿內容，請確認瀏覽器權限");
+  });
+}
+</script>
+
+<div id="stats"></div>
   <div id="unselected"></div>
   <textarea id="note" placeholder="備註區：可輸入自由內容..." oninput="saveNote()"></textarea>
 
