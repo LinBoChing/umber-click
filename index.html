@@ -210,20 +210,29 @@
 <script>
 function applyNumbers() {
   const input = document.getElementById("numberInput").value;
-  // 將輸入中的非數字字元換成空格，再用空格分割
-  const cleaned = input.replace(/[^\d]/g, " ").split(/\s+/).map(num => parseInt(num, 10));
-  // 過濾合法的 1~39 號碼
-  const validNumbers = cleaned.filter(num => !isNaN(num) && num >= 1 && num <= 39);
+  const rawNumbers = input.replace(/[^\d]/g, " ").split(/\s+/).map(n => parseInt(n, 10));
+  const validNumbers = rawNumbers.filter(n => !isNaN(n) && n >= 1 && n <= 39);
 
-  // 清空現有選擇
+  // 清空所有選取
   document.querySelectorAll("input[type='checkbox']").forEach(cb => cb.checked = false);
 
-  // 勾選對應號碼
+  // 嘗試選取符合的號碼（value 可能是 1 或 01）
   validNumbers.forEach(num => {
     const padded = num.toString().padStart(2, '0');
-    const checkbox = document.querySelector("input[type='checkbox'][value='" + padded + "']");
-    if (checkbox) checkbox.checked = true;
+    const selectors = [
+      "input[type='checkbox'][value='" + num + "']",
+      "input[type='checkbox'][value='" + padded + "']"
+    ];
+    for (let sel of selectors) {
+      const checkbox = document.querySelector(sel);
+      if (checkbox) {
+        checkbox.checked = true;
+        break;
+      }
+    }
   });
+
+  alert("已套用號碼：" + validNumbers.map(n => n.toString().padStart(2, '0')).join("、"));
 }
 </script>
 
