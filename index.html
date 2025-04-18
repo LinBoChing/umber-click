@@ -241,30 +241,6 @@ function pasteFromClipboard() {
   </script>
 
 
-<!-- 新增的號碼輸入區域 -->
-<div style="margin-top: 20px;">
-  <label for="numberInput">貼上號碼（可使用空格、逗號、點號分隔）：</label><br>
-  <textarea id="numberInput" rows="3" style="width: 100%; max-width: 400px;"></textarea><br>
-  <button onclick="applyNumbers()">套用號碼</button>
-</div>
 
-<script>
-function applyNumbers() {
-  const input = document.getElementById("numberInput").value;
-  const rawNumbers = input.replace(/[^\d]/g, " ").split(/\s+/).map(n => parseInt(n, 10));
-  const validNumbers = rawNumbers.filter(n => !isNaN(n) && n >= 1 && n <= 39);
-
-  // 疊加點擊次數，不清空原有選擇
-  validNumbers.forEach(num => {
-    const padded = num.toString().padStart(2, '0');
-    clickCounts[padded] = (clickCounts[padded] || 0) + 1;
-    historyStack.push(padded);
-  });
-
-  updateStats();
-
-  alert("已套用號碼：" + validNumbers.map(n => n.toString().padStart(2, '0')).join("、"));
-}
-</script>
 
 </html>
