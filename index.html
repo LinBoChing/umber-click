@@ -129,7 +129,8 @@ function pasteFromClipboard() {
 
 <div id="stats"></div>
   <div id="unselected"></div>
-  <textarea id="note" placeholder="備註區：可輸入自由內容..." oninput="saveNote()"></textarea>
+  <button onclick="clearNote()">清空備註</button><br>
+<textarea id="note" placeholder="備註區：可輸入自由內容..." oninput="saveNote()"></textarea>
 
   <div id="external-link">
     <a href="https://www.lot539.com/lottery/539/lost/desc/mis" target="_blank" rel="noopener noreferrer">
@@ -145,45 +146,73 @@ function pasteFromClipboard() {
     const clickCounts = {};
     const historyStack = [];
 
-    function updateStats() {
-      let output = "";
-      const groups = {};
+    
+function updateStats() {
+  let output = "";
+  const groups = {};
 
-      Object.entries(clickCounts).forEach(([num, count]) => {
-        if (count > 0) {
-          if (!groups[count]) groups[count] = [];
-          groups[count].push(num);
-        }
-      });
+  function createCopyButton(numbers) {
+    const btn = document.createElement("button");
+    btn.textContent = "複製到備註";
+    btn.style.marginLeft = "10px";
+    btn.onclick = () => {
+      const noteField = document.getElementById("note");
+      const existing = noteField.value.trim().split(/\s+/).filter(n => n);
+      const merged = Array.from(new Set([...existing, ...numbers]));
+      noteField.value = merged.join(" ");
+      saveNote();
+    };
+    return btn;
+  }
 
-      const sortedKeys = Object.keys(groups).map(Number).sort((a, b) => a - b);
-      sortedKeys.forEach(count => {
-        output += "<span class='group-title'>" + count + "次</span>\n" + groups[count].join(".") + "\n";
-      });
+  Object.entries(clickCounts).forEach(([num, count]) => {
+    if (count > 0) {
+      if (!groups[count]) groups[count] = [];
+      groups[count].push(num);
+    }
+  });
 
-      statsDiv.innerHTML = output || "目前尚未選取任何號碼";
+  const sortedKeys = Object.keys(groups).map(Number).sort((a, b) => a - b);
+  statsDiv.innerHTML = "";
+  sortedKeys.forEach(count => {
+    const numbers = groups[count];
+    const groupDiv = document.createElement("div");
+    const label = document.createElement("span");
+    label.className = "group-title";
+    label.textContent = count + "次";
+    groupDiv.appendChild(label);
 
-      let unselected = [];
-      Object.keys(clickCounts).forEach(num => {
-        const count = clickCounts[num];
-        const div = document.getElementById("btn-" + num);
-        div.className = "number";
-        div.textContent = num; // 強制將內容設為數字
+    const numberText = document.createTextNode(" " + numbers.join(" "));
+    groupDiv.appendChild(numberText);
 
-        if (count > 0) {
-          if (count === 1) div.classList.add("count-1");
-          else if (count === 2) div.classList.add("count-2");
-          else if (count === 3) div.classList.add("count-3");
-          else div.classList.add("count-more");
+    const button = createCopyButton(numbers);
+    groupDiv.appendChild(button);
 
-          div.textContent = `${num} (${count})`;
-        } else {
-          unselected.push(num);
-        }
-      });
+    statsDiv.appendChild(groupDiv);
+  });
 
-      unselectedDiv.textContent = "尚未選取的號碼：\n" + unselected.join(" ");
-      saveData();
+  let unselected = [];
+  Object.keys(clickCounts).forEach(num => {
+    const count = clickCounts[num];
+    const div = document.getElementById("btn-" + num);
+    div.className = "number";
+    div.textContent = num;
+    if (count > 0) {
+      if (count === 1) div.classList.add("count-1");
+      else if (count === 2) div.classList.add("count-2");
+      else if (count === 3) div.classList.add("count-3");
+      else div.classList.add("count-more");
+
+      div.textContent = `${num} (${count})`;
+    } else {
+      unselected.push(num);
+    }
+  });
+
+  unselectedDiv.textContent = "尚未選取的號碼：\\n" + unselected.join(" ");
+  saveData();
+}
+
     }
 
     function resetAll() {
@@ -216,7 +245,12 @@ function pasteFromClipboard() {
       noteField.value = localStorage.getItem("noteText") || "";
     }
 
-    function saveNote() {
+    function clearNote() {
+  document.getElementById("note").value = "";
+  saveNote();
+}
+
+function saveNote() {
       localStorage.setItem("noteText", noteField.value);
     }
 
