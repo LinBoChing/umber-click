@@ -131,6 +131,12 @@ function pasteFromClipboard() {
   <div id="unselected"></div>
   <button onclick="clearNote()">清空備註</button><br>
 <textarea id="note" placeholder="備註區：可輸入自由內容..." oninput="saveNote()"></textarea>
+<div style="text-align:center; margin: 10px;">
+  <button onclick="insertTTLLComparison()" style="padding:10px 20px; font-size:16px; background-color:#007bff; color:white; border:none; border-radius:6px;">
+    天天樂遺漏比對（自動讀取）
+  </button>
+</div>
+
 
   <div id="external-link">
     <a href="https://www.lot539.com/lottery/539/lost/desc/mis" target="_blank" rel="noopener noreferrer">
@@ -274,6 +280,20 @@ function saveNote() {
 
     loadData();
     updateStats();
+function insertTTLLComparison() {
+  fetch("https://linboching.github.io/umber-click/ttll_crossmatch.json")
+    .then(response => response.json())
+    .then(data => {
+      const resultLines = data.matched.map(item => item.number + "（遺漏" + item.miss + "次）");
+      const fullText = data.title + "\n" + resultLines.join("\n");
+      document.getElementById("note").value = fullText;
+      saveNote();
+    })
+    .catch(error => {
+      alert("讀取比對資料時發生錯誤：" + error);
+    });
+}
+
   </script>
 
 
