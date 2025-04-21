@@ -1,8 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
 import json
+from datetime import datetime
 
-# 網址
 omission_url = 'https://www.lot539.com/lottery/fantasy5/lost/asc/mis'
 freq_url = 'https://www.calotteryx.com/Fantasy-5/latest-50-draws/order-by-ranks/frequency-chart.htm'
 
@@ -58,10 +58,13 @@ if not error_msg:
                 'miss': omit_data[num]
             })
 
-# 輸出 JSON 檔
+# 加入更新時間欄位
+now_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
+
 with open('ttll_crossmatch.json', 'w', encoding='utf-8') as f:
     json.dump({
         'title': '【天天樂遺漏比對】',
         'matched': matched,
+        'updated_at': now_time,
         'error': error_msg if error_msg else None
     }, f, ensure_ascii=False, indent=2)
