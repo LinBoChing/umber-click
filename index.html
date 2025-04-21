@@ -131,6 +131,8 @@ function pasteFromClipboard() {
   <div id="unselected"></div>
   <button onclick="clearNote()">清空備註</button><br>
 <textarea id="note" placeholder="備註區：可輸入自由內容..." oninput="saveNote()"></textarea>
+
+<div id="jsonTime" style="text-align:center; color:#555; font-size:14px; margin-bottom:8px;"></div>
 <div style="text-align:center; margin: 10px;">
   <button onclick="insertTTLLComparison()" style="padding:10px 20px; font-size:16px; background-color:#007bff; color:white; border:none; border-radius:6px;">
     天天樂遺漏比對（自動讀取）
@@ -285,6 +287,12 @@ function insertTTLLComparison() {
     .then(response => response.json())
     .then(data => {
       const resultLines = data.matched.map(item => item.number + "（遺漏" + item.miss + "次）");
+      
+      if (data && data.updated_at) {
+        const timeDiv = document.getElementById("jsonTime");
+        timeDiv.innerText = "資料更新時間：" + data.updated_at;
+      }
+
       const fullText = data.title + "\n" + resultLines.join("\n");
       document.getElementById("note").value = fullText;
       saveNote();
