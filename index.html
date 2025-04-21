@@ -111,7 +111,80 @@ function applyNumbers() {
   });
 
   updateStats();
+// updated script\n
 function runInstantCrossMatch() {
+  const omitURL = 'https://www.lot539.com/lottery/fantasy5/lost/asc/mis';
+  const freqURL = 'https://www.calotteryx.com/Fantasy-5/latest-50-draws/order-by-ranks/frequency-chart.htm';
+
+  Promise.all([
+    fetch(omitURL).then(res => res.text()),
+    fetch(freqURL).then(res => res.text())
+  ]).then(([omitHTML, freqHTML]) => {
+    const parser = new DOMParser();
+    const omitDoc = parser.parseFromString(omitHTML, 'text/html');
+    const freqDoc = parser.parseFromString(freqHTML, 'text/html');
+
+    const omitTable = omitDoc.querySelector('table');
+    const freqTable = freqDoc.querySelector('table');
+
+    const omitData = {};
+    const freqData = {};
+
+    if (omitTable) {
+      omitTable.querySelectorAll('tr').forEach((row, i) => {
+        if (i === 0) return;
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 3) {
+          const num = cells[0].textContent.trim().padStart(2, '0');
+          const miss = parseInt(cells[2].textContent.trim());
+          if (!isNaN(miss)) omitData[num] = miss;
+        }
+      });
+    }
+
+    if (freqTable) {
+      freqTable.querySelectorAll('tr').forEach((row, i) => {
+        if (i === 0) return;
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 3) {
+          const num = cells[1].textContent.trim().padStart(2, '0');
+          const count = parseInt(cells[2].textContent.trim());
+          if (!isNaN(count)) freqData[num] = count;
+        }
+      });
+    }
+
+    const matched = [];
+    const avg = 250 / 39;
+
+    for (const num in freqData) {
+      if (freqData[num] < avg && (omitData[num] || 0) > 7) {
+        matched.push(`${num}（遺漏${omitData[num]}次）`);
+      }
+    }
+
+    const now = new Date();
+    const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+    const timeStr = taiwanTime.toISOString().replace('T', ' ').substring(0, 16);
+
+    const noteField = document.getElementById('note');
+    if (matched.length > 0) {
+      noteField.value = '【天天樂遺漏比對】\n' + matched.join('\n') + '\n\n比對時間：' + timeStr;
+    } else {
+      noteField.value = '【天天樂遺漏比對】\n無符合條件的號碼\n比對時間：' + timeStr;
+    }
+    saveNote();
+  }).catch(err => {
+    const now = new Date();
+    const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+    const timeStr = taiwanTime.toISOString().replace('T', ' ').substring(0, 16);
+
+    const noteField = document.getElementById('note');
+    noteField.value = '【天天樂遺漏比對】\n錯誤：網站資料無法讀取（可能被擋）\n比對時間：' + timeStr;
+    saveNote();
+  });
+}
+ {
   const omitURL = 'https://www.lot539.com/lottery/fantasy5/lost/asc/mis';
   const freqURL = 'https://www.calotteryx.com/Fantasy-5/latest-50-draws/order-by-ranks/frequency-chart.htm';
 
@@ -292,7 +365,80 @@ function pasteFromClipboard() {
       });
       historyStack.length = 0;
       updateStats();
+// updated script\n
 function runInstantCrossMatch() {
+  const omitURL = 'https://www.lot539.com/lottery/fantasy5/lost/asc/mis';
+  const freqURL = 'https://www.calotteryx.com/Fantasy-5/latest-50-draws/order-by-ranks/frequency-chart.htm';
+
+  Promise.all([
+    fetch(omitURL).then(res => res.text()),
+    fetch(freqURL).then(res => res.text())
+  ]).then(([omitHTML, freqHTML]) => {
+    const parser = new DOMParser();
+    const omitDoc = parser.parseFromString(omitHTML, 'text/html');
+    const freqDoc = parser.parseFromString(freqHTML, 'text/html');
+
+    const omitTable = omitDoc.querySelector('table');
+    const freqTable = freqDoc.querySelector('table');
+
+    const omitData = {};
+    const freqData = {};
+
+    if (omitTable) {
+      omitTable.querySelectorAll('tr').forEach((row, i) => {
+        if (i === 0) return;
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 3) {
+          const num = cells[0].textContent.trim().padStart(2, '0');
+          const miss = parseInt(cells[2].textContent.trim());
+          if (!isNaN(miss)) omitData[num] = miss;
+        }
+      });
+    }
+
+    if (freqTable) {
+      freqTable.querySelectorAll('tr').forEach((row, i) => {
+        if (i === 0) return;
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 3) {
+          const num = cells[1].textContent.trim().padStart(2, '0');
+          const count = parseInt(cells[2].textContent.trim());
+          if (!isNaN(count)) freqData[num] = count;
+        }
+      });
+    }
+
+    const matched = [];
+    const avg = 250 / 39;
+
+    for (const num in freqData) {
+      if (freqData[num] < avg && (omitData[num] || 0) > 7) {
+        matched.push(`${num}（遺漏${omitData[num]}次）`);
+      }
+    }
+
+    const now = new Date();
+    const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+    const timeStr = taiwanTime.toISOString().replace('T', ' ').substring(0, 16);
+
+    const noteField = document.getElementById('note');
+    if (matched.length > 0) {
+      noteField.value = '【天天樂遺漏比對】\n' + matched.join('\n') + '\n\n比對時間：' + timeStr;
+    } else {
+      noteField.value = '【天天樂遺漏比對】\n無符合條件的號碼\n比對時間：' + timeStr;
+    }
+    saveNote();
+  }).catch(err => {
+    const now = new Date();
+    const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+    const timeStr = taiwanTime.toISOString().replace('T', ' ').substring(0, 16);
+
+    const noteField = document.getElementById('note');
+    noteField.value = '【天天樂遺漏比對】\n錯誤：網站資料無法讀取（可能被擋）\n比對時間：' + timeStr;
+    saveNote();
+  });
+}
+ {
   const omitURL = 'https://www.lot539.com/lottery/fantasy5/lost/asc/mis';
   const freqURL = 'https://www.calotteryx.com/Fantasy-5/latest-50-draws/order-by-ranks/frequency-chart.htm';
 
@@ -362,7 +508,80 @@ function runInstantCrossMatch() {
       if (last && clickCounts[last] > 0) {
         clickCounts[last]--;
         updateStats();
+// updated script\n
 function runInstantCrossMatch() {
+  const omitURL = 'https://www.lot539.com/lottery/fantasy5/lost/asc/mis';
+  const freqURL = 'https://www.calotteryx.com/Fantasy-5/latest-50-draws/order-by-ranks/frequency-chart.htm';
+
+  Promise.all([
+    fetch(omitURL).then(res => res.text()),
+    fetch(freqURL).then(res => res.text())
+  ]).then(([omitHTML, freqHTML]) => {
+    const parser = new DOMParser();
+    const omitDoc = parser.parseFromString(omitHTML, 'text/html');
+    const freqDoc = parser.parseFromString(freqHTML, 'text/html');
+
+    const omitTable = omitDoc.querySelector('table');
+    const freqTable = freqDoc.querySelector('table');
+
+    const omitData = {};
+    const freqData = {};
+
+    if (omitTable) {
+      omitTable.querySelectorAll('tr').forEach((row, i) => {
+        if (i === 0) return;
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 3) {
+          const num = cells[0].textContent.trim().padStart(2, '0');
+          const miss = parseInt(cells[2].textContent.trim());
+          if (!isNaN(miss)) omitData[num] = miss;
+        }
+      });
+    }
+
+    if (freqTable) {
+      freqTable.querySelectorAll('tr').forEach((row, i) => {
+        if (i === 0) return;
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 3) {
+          const num = cells[1].textContent.trim().padStart(2, '0');
+          const count = parseInt(cells[2].textContent.trim());
+          if (!isNaN(count)) freqData[num] = count;
+        }
+      });
+    }
+
+    const matched = [];
+    const avg = 250 / 39;
+
+    for (const num in freqData) {
+      if (freqData[num] < avg && (omitData[num] || 0) > 7) {
+        matched.push(`${num}（遺漏${omitData[num]}次）`);
+      }
+    }
+
+    const now = new Date();
+    const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+    const timeStr = taiwanTime.toISOString().replace('T', ' ').substring(0, 16);
+
+    const noteField = document.getElementById('note');
+    if (matched.length > 0) {
+      noteField.value = '【天天樂遺漏比對】\n' + matched.join('\n') + '\n\n比對時間：' + timeStr;
+    } else {
+      noteField.value = '【天天樂遺漏比對】\n無符合條件的號碼\n比對時間：' + timeStr;
+    }
+    saveNote();
+  }).catch(err => {
+    const now = new Date();
+    const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+    const timeStr = taiwanTime.toISOString().replace('T', ' ').substring(0, 16);
+
+    const noteField = document.getElementById('note');
+    noteField.value = '【天天樂遺漏比對】\n錯誤：網站資料無法讀取（可能被擋）\n比對時間：' + timeStr;
+    saveNote();
+  });
+}
+ {
   const omitURL = 'https://www.lot539.com/lottery/fantasy5/lost/asc/mis';
   const freqURL = 'https://www.calotteryx.com/Fantasy-5/latest-50-draws/order-by-ranks/frequency-chart.htm';
 
@@ -462,7 +681,80 @@ function saveNote() {
         clickCounts[num]++;
         historyStack.push(num);
         updateStats();
+// updated script\n
 function runInstantCrossMatch() {
+  const omitURL = 'https://www.lot539.com/lottery/fantasy5/lost/asc/mis';
+  const freqURL = 'https://www.calotteryx.com/Fantasy-5/latest-50-draws/order-by-ranks/frequency-chart.htm';
+
+  Promise.all([
+    fetch(omitURL).then(res => res.text()),
+    fetch(freqURL).then(res => res.text())
+  ]).then(([omitHTML, freqHTML]) => {
+    const parser = new DOMParser();
+    const omitDoc = parser.parseFromString(omitHTML, 'text/html');
+    const freqDoc = parser.parseFromString(freqHTML, 'text/html');
+
+    const omitTable = omitDoc.querySelector('table');
+    const freqTable = freqDoc.querySelector('table');
+
+    const omitData = {};
+    const freqData = {};
+
+    if (omitTable) {
+      omitTable.querySelectorAll('tr').forEach((row, i) => {
+        if (i === 0) return;
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 3) {
+          const num = cells[0].textContent.trim().padStart(2, '0');
+          const miss = parseInt(cells[2].textContent.trim());
+          if (!isNaN(miss)) omitData[num] = miss;
+        }
+      });
+    }
+
+    if (freqTable) {
+      freqTable.querySelectorAll('tr').forEach((row, i) => {
+        if (i === 0) return;
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 3) {
+          const num = cells[1].textContent.trim().padStart(2, '0');
+          const count = parseInt(cells[2].textContent.trim());
+          if (!isNaN(count)) freqData[num] = count;
+        }
+      });
+    }
+
+    const matched = [];
+    const avg = 250 / 39;
+
+    for (const num in freqData) {
+      if (freqData[num] < avg && (omitData[num] || 0) > 7) {
+        matched.push(`${num}（遺漏${omitData[num]}次）`);
+      }
+    }
+
+    const now = new Date();
+    const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+    const timeStr = taiwanTime.toISOString().replace('T', ' ').substring(0, 16);
+
+    const noteField = document.getElementById('note');
+    if (matched.length > 0) {
+      noteField.value = '【天天樂遺漏比對】\n' + matched.join('\n') + '\n\n比對時間：' + timeStr;
+    } else {
+      noteField.value = '【天天樂遺漏比對】\n無符合條件的號碼\n比對時間：' + timeStr;
+    }
+    saveNote();
+  }).catch(err => {
+    const now = new Date();
+    const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+    const timeStr = taiwanTime.toISOString().replace('T', ' ').substring(0, 16);
+
+    const noteField = document.getElementById('note');
+    noteField.value = '【天天樂遺漏比對】\n錯誤：網站資料無法讀取（可能被擋）\n比對時間：' + timeStr;
+    saveNote();
+  });
+}
+ {
   const omitURL = 'https://www.lot539.com/lottery/fantasy5/lost/asc/mis';
   const freqURL = 'https://www.calotteryx.com/Fantasy-5/latest-50-draws/order-by-ranks/frequency-chart.htm';
 
@@ -532,7 +824,80 @@ function runInstantCrossMatch() {
 
     loadData();
     updateStats();
+// updated script\n
 function runInstantCrossMatch() {
+  const omitURL = 'https://www.lot539.com/lottery/fantasy5/lost/asc/mis';
+  const freqURL = 'https://www.calotteryx.com/Fantasy-5/latest-50-draws/order-by-ranks/frequency-chart.htm';
+
+  Promise.all([
+    fetch(omitURL).then(res => res.text()),
+    fetch(freqURL).then(res => res.text())
+  ]).then(([omitHTML, freqHTML]) => {
+    const parser = new DOMParser();
+    const omitDoc = parser.parseFromString(omitHTML, 'text/html');
+    const freqDoc = parser.parseFromString(freqHTML, 'text/html');
+
+    const omitTable = omitDoc.querySelector('table');
+    const freqTable = freqDoc.querySelector('table');
+
+    const omitData = {};
+    const freqData = {};
+
+    if (omitTable) {
+      omitTable.querySelectorAll('tr').forEach((row, i) => {
+        if (i === 0) return;
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 3) {
+          const num = cells[0].textContent.trim().padStart(2, '0');
+          const miss = parseInt(cells[2].textContent.trim());
+          if (!isNaN(miss)) omitData[num] = miss;
+        }
+      });
+    }
+
+    if (freqTable) {
+      freqTable.querySelectorAll('tr').forEach((row, i) => {
+        if (i === 0) return;
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 3) {
+          const num = cells[1].textContent.trim().padStart(2, '0');
+          const count = parseInt(cells[2].textContent.trim());
+          if (!isNaN(count)) freqData[num] = count;
+        }
+      });
+    }
+
+    const matched = [];
+    const avg = 250 / 39;
+
+    for (const num in freqData) {
+      if (freqData[num] < avg && (omitData[num] || 0) > 7) {
+        matched.push(`${num}（遺漏${omitData[num]}次）`);
+      }
+    }
+
+    const now = new Date();
+    const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+    const timeStr = taiwanTime.toISOString().replace('T', ' ').substring(0, 16);
+
+    const noteField = document.getElementById('note');
+    if (matched.length > 0) {
+      noteField.value = '【天天樂遺漏比對】\n' + matched.join('\n') + '\n\n比對時間：' + timeStr;
+    } else {
+      noteField.value = '【天天樂遺漏比對】\n無符合條件的號碼\n比對時間：' + timeStr;
+    }
+    saveNote();
+  }).catch(err => {
+    const now = new Date();
+    const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+    const timeStr = taiwanTime.toISOString().replace('T', ' ').substring(0, 16);
+
+    const noteField = document.getElementById('note');
+    noteField.value = '【天天樂遺漏比對】\n錯誤：網站資料無法讀取（可能被擋）\n比對時間：' + timeStr;
+    saveNote();
+  });
+}
+ {
   const omitURL = 'https://www.lot539.com/lottery/fantasy5/lost/asc/mis';
   const freqURL = 'https://www.calotteryx.com/Fantasy-5/latest-50-draws/order-by-ranks/frequency-chart.htm';
 
