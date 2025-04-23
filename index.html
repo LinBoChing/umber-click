@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -35,7 +34,6 @@
     .count-2 { background-color: #33cc33; color: white; }
     .count-3 { background-color: #ff9933; color: white; }
     .count-more { background-color: #cc3333; color: white; }
-
     .group-title {
       display: inline-block;
       background-color: #444;
@@ -45,7 +43,6 @@
       margin-top: 8px;
       font-weight: bold;
     }
-
     #controls {
       margin-bottom: 15px;
       text-align: center;
@@ -87,196 +84,197 @@
     <button onclick="undoLast()">恢復上一動</button>
   </div>
   <div id="numbers" class="grid"></div>
-  
-<!-- 新增的號碼輸入區域（移動位置 + 兩個新按鈕） -->
-<div style="margin-top: 20px; text-align: center;">
-  <label for="numberInput"><strong>快速貼上號碼（可使用空格、逗號、點號分隔）：</strong></label><br>
-  <textarea id="numberInput" rows="3" style="width: 100%; max-width: 400px; margin-top: 5px;"></textarea><br>
-  <button onclick="pasteFromClipboard()">貼上剪貼簿</button>
-  <button onclick="clearInput()">清除內容</button>
-  <button onclick="applyNumbers()">套用號碼</button>
-</div>
-
-<script>
-function applyNumbers() {
-  const input = document.getElementById("numberInput").value;
-  const rawNumbers = input.replace(/[^\d]/g, " ").split(/\s+/).map(n => parseInt(n, 10));
-  const validNumbers = rawNumbers.filter(n => !isNaN(n) && n >= 1 && n <= 39);
-
-  // 疊加點擊次數，不清空原有選擇
-  validNumbers.forEach(num => {
-    const padded = num.toString().padStart(2, '0');
-    clickCounts[padded] = (clickCounts[padded] || 0) + 1;
-    historyStack.push(padded);
-  });
-
-  updateStats();
-  alert("已套用號碼：" + validNumbers.map(n => n.toString().padStart(2, '0')).join("、"));
-}
-
-function clearInput() {
-  document.getElementById("numberInput").value = "";
-}
-
-function pasteFromClipboard() {
-  navigator.clipboard.readText().then(text => {
-    document.getElementById("numberInput").value = text;
-  }).catch(err => {
-    alert("無法讀取剪貼簿內容，請確認瀏覽器權限");
-  });
-}
-</script>
-
-<div id="stats"></div>
+  <div style="margin-top: 20px; text-align: center;">
+    <label for="numberInput"><strong>快速貼上號碼（可使用空格、逗號、點號分隔）：</strong></label><br>
+    <textarea id="numberInput" rows="3" style="width: 100%; max-width: 400px; margin-top: 5px;"></textarea><br>
+    <button onclick="pasteFromClipboard()">貼上剪貼簿</button>
+    <button onclick="clearInput()">清除內容</button>
+    <button onclick="applyNumbers()">套用號碼</button>
+  </div>
+  <div id="stats"></div>
   <div id="unselected"></div>
   <button onclick="clearNote()">清空備註</button><br>
-<textarea id="note" placeholder="備註區：可輸入自由內容..." oninput="saveNote()"></textarea>
-
+  <textarea id="note" placeholder="備註區：可輸入自由內容..." oninput="saveNote()"></textarea>
   <div id="external-link">
     <a href="https://www.lot539.com/lottery/539/lost/desc/mis" target="_blank" rel="noopener noreferrer">
       查看未開統計（另開分頁）
     </a>
   </div>
+  <hr>
+  <h3>連碰計算器</h3>
+  <div>
+    <label>選擇使用的號碼數量（4~20）：</label>
+    <input type="number" id="comboCount" min="4" max="20" value="4">
+  </div>
+  <div>
+    <label>玩法選擇：</label><br>
+    <label><input type="checkbox" id="star2" checked> 2星</label>
+    <label><input type="checkbox" id="star3" checked> 3星</label>
+    <label><input type="checkbox" id="star4" checked> 4星</label>
+  </div>
+  <div>
+    <label>投注倍數（可輸入小數）：</label>
+    <input type="number" id="multiplier" step="0.1" min="0.1" value="1">
+  </div>
+  <div>
+    <button onclick="calculateCombinations()">計算結果</button>
+  </div>
+  <div id="comboResult" style="margin-top: 20px; white-space: pre-wrap; font-size: 15px;"></div>
+<script>
+const container = document.getElementById("numbers");
+const statsDiv = document.getElementById("stats");
+const unselectedDiv = document.getElementById("unselected");
+const noteField = document.getElementById("note");
+const clickCounts = {};
+const historyStack = [];
 
-  <script>
-    const container = document.getElementById("numbers");
-    const statsDiv = document.getElementById("stats");
-    const unselectedDiv = document.getElementById("unselected");
-    const noteField = document.getElementById("note");
-    const clickCounts = {};
-    const historyStack = [];
-
-    function updateStats() {
-
-  function createCopyButton(numbers) {
-    const btn = document.createElement("button");
-    btn.textContent = "複製到備註";
-    btn.style.marginLeft = "10px";
-    btn.onclick = () => {
-      const noteField = document.getElementById("note");
-      const existing = noteField.value.trim().split(/\s+/).filter(n => n);
-      const merged = Array.from(new Set([...existing, ...numbers]));
-      noteField.value = merged.join(" ");
-      saveNote();
-    };
-    return btn;
-  }
-
-      let output = "";
-      const groups = {};
-
-      Object.entries(clickCounts).forEach(([num, count]) => {
-        if (count > 0) {
-          if (!groups[count]) groups[count] = [];
-          groups[count].push(num);
-        }
-      });
-
-      const sortedKeys = Object.keys(groups).map(Number).sort((a, b) => a - b);
-      sortedKeys.forEach(count => {
-        output += "<span class='group-title'>" + count + "次</span>\n" + groups[count].join(".") + "\n";
-      });
-
-      
-  statsDiv.innerHTML = "";
-  sortedKeys.forEach(count => {
-    const groupNumbers = groups[count];
-    const groupDiv = document.createElement("div");
-    const label = document.createElement("span");
-    label.className = "group-title";
-    label.textContent = count + "次";
-    const numberText = document.createTextNode(" " + groupNumbers.join(" "));
-    const btn = createCopyButton(groupNumbers);
-    groupDiv.appendChild(label);
-    groupDiv.appendChild(numberText);
-    groupDiv.appendChild(btn);
-    statsDiv.appendChild(groupDiv);
+function updateStats() {
+  let groups = {};
+  Object.entries(clickCounts).forEach(([num, count]) => {
+    if (count > 0) {
+      if (!groups[count]) groups[count] = [];
+      groups[count].push(num);
+    }
   });
-
-
-      let unselected = [];
-      Object.keys(clickCounts).forEach(num => {
-        const count = clickCounts[num];
-        const div = document.getElementById("btn-" + num);
-        div.className = "number";
-        div.textContent = num; // 強制將內容設為數字
-
-        if (count > 0) {
-          if (count === 1) div.classList.add("count-1");
-          else if (count === 2) div.classList.add("count-2");
-          else if (count === 3) div.classList.add("count-3");
-          else div.classList.add("count-more");
-
-          div.textContent = `${num} (${count})`;
-        } else {
-          unselected.push(num);
-        }
-      });
-
-      unselectedDiv.textContent = "尚未選取的號碼：\n" + unselected.join(" ");
-      saveData();
+  statsDiv.innerHTML = "";
+  Object.keys(groups).sort((a,b)=>a-b).forEach(count => {
+    const div = document.createElement("div");
+    div.innerHTML = `<span class='group-title'>${count}次</span> ${groups[count].join(" ")}`;
+    statsDiv.appendChild(div);
+  });
+  let unselected = [];
+  for (let i = 1; i <= 39; i++) {
+    let num = i.toString().padStart(2, '0');
+    let div = document.getElementById("btn-" + num);
+    div.className = "number";
+    div.textContent = num;
+    if (clickCounts[num]) {
+      div.classList.add("count-" + (clickCounts[num] > 3 ? "more" : clickCounts[num]));
+      div.textContent = `${num} (${clickCounts[num]})`;
+    } else {
+      unselected.push(num);
     }
+  }
+  unselectedDiv.textContent = "尚未選取的號碼：\n" + unselected.join(" ");
+  saveData();
+}
 
-    function resetAll() {
-      Object.keys(clickCounts).forEach(num => {
-        clickCounts[num] = 0;
-      });
-      historyStack.length = 0;
-      updateStats();
-    }
+function resetAll() {
+  Object.keys(clickCounts).forEach(n => clickCounts[n] = 0);
+  historyStack.length = 0;
+  updateStats();
+}
 
-    function undoLast() {
-      const last = historyStack.pop();
-      if (last && clickCounts[last] > 0) {
-        clickCounts[last]--;
-        updateStats();
-      }
-    }
+function undoLast() {
+  const last = historyStack.pop();
+  if (last && clickCounts[last] > 0) {
+    clickCounts[last]--;
+    updateStats();
+  }
+}
 
-    function saveData() {
-      localStorage.setItem("clickCounts", JSON.stringify(clickCounts));
-      localStorage.setItem("noteText", noteField.value);
-    }
+function saveData() {
+  localStorage.setItem("clickCounts", JSON.stringify(clickCounts));
+  localStorage.setItem("noteText", noteField.value);
+}
 
-    function loadData() {
-      const savedCounts = JSON.parse(localStorage.getItem("clickCounts") || "{}");
-      for (let i = 1; i <= 39; i++) {
-        const num = i.toString().padStart(2, '0');
-        clickCounts[num] = savedCounts[num] || 0;
-      }
-      noteField.value = localStorage.getItem("noteText") || "";
-    }
+function loadData() {
+  const saved = JSON.parse(localStorage.getItem("clickCounts") || "{}");
+  for (let i = 1; i <= 39; i++) {
+    let n = i.toString().padStart(2, '0');
+    clickCounts[n] = saved[n] || 0;
+  }
+  noteField.value = localStorage.getItem("noteText") || "";
+}
 
-    function clearNote() {
-  document.getElementById("note").value = "";
+function clearNote() {
+  noteField.value = "";
   saveNote();
 }
 
 function saveNote() {
-      localStorage.setItem("noteText", noteField.value);
-    }
+  localStorage.setItem("noteText", noteField.value);
+}
 
-    for (let i = 1; i <= 39; i++) {
-      const num = i.toString().padStart(2, '0');
-      const div = document.createElement("div");
-      div.className = "number";
-      div.id = "btn-" + num;
-      div.textContent = num;
+function applyNumbers() {
+  const input = document.getElementById("numberInput").value;
+  const raw = input.replace(/[^\d]/g, " ").split(/\s+/).map(n => parseInt(n, 10));
+  const valid = raw.filter(n => !isNaN(n) && n >= 1 && n <= 39);
+  valid.forEach(n => {
+    const pad = n.toString().padStart(2, '0');
+    clickCounts[pad] = (clickCounts[pad] || 0) + 1;
+    historyStack.push(pad);
+  });
+  updateStats();
+  alert("已套用號碼：" + valid.map(n => n.toString().padStart(2,'0')).join("、"));
+}
 
-      div.addEventListener("click", () => {
-        clickCounts[num]++;
-        historyStack.push(num);
-        updateStats();
-      });
+function pasteFromClipboard() {
+  navigator.clipboard.readText().then(text => {
+    document.getElementById("numberInput").value = text;
+  }).catch(() => {
+    alert("無法讀取剪貼簿內容");
+  });
+}
 
-      container.appendChild(div);
-    }
-
-    loadData();
+for (let i = 1; i <= 39; i++) {
+  let num = i.toString().padStart(2, '0');
+  let div = document.createElement("div");
+  div.className = "number";
+  div.id = "btn-" + num;
+  div.textContent = num;
+  div.addEventListener("click", () => {
+    clickCounts[num] = (clickCounts[num] || 0) + 1;
+    historyStack.push(num);
     updateStats();
-  </script>
+  });
+  container.appendChild(div);
+}
 
+function factorial(n) {
+  if (n === 0 || n === 1) return 1;
+  let result = 1;
+  for (let i = 2; i <= n; i++) result *= i;
+  return result;
+}
+function C(n, k) {
+  if (k > n) return 0;
+  return factorial(n) / (factorial(k) * factorial(n - k));
+}
+function calculateCombinations() {
+  const count = parseInt(document.getElementById("comboCount").value, 10);
+  const use2 = document.getElementById("star2").checked;
+  const use3 = document.getElementById("star3").checked;
+  const use4 = document.getElementById("star4").checked;
+  const multiplier = parseFloat(document.getElementById("multiplier").value);
 
+  let result = `使用號碼數：${count} 個\n玩法：`;
+  let totalCost = 0;
+  let totalPrize = 0;
 
+  const prizeTable = { 2: 5300, 3: 57000, 4: 750000 };
+  const selectedStars = [];
+  if (use2) selectedStars.push(2);
+  if (use3) selectedStars.push(3);
+  if (use4) selectedStars.push(4);
+  result += selectedStars.map(s => s + "星").join("、") + `\n投注倍數：${multiplier} 倍\n\n組合數：\n`;
 
+  selectedStars.forEach(star => {
+    const combinations = C(count, star);
+    const cost = combinations * 80 * multiplier;
+    const prize = combinations * prizeTable[star] * multiplier;
+    totalCost += cost;
+    totalPrize += prize;
+    result += `${star}星：${combinations} 組 × 80元 × ${multiplier} = ${cost.toFixed(0)}元\n`;
+  });
+
+  result += `\n總投注金額：${totalCost.toFixed(0)} 元\n\n若中 2 支號碼：\n${use2 ? `→ 中獎兩星獎金：${(C(2, 2) * 5300 * multiplier).toFixed(0)} 元\n` : ""}\n若中 3 支號碼：\n${use2 ? `→ 中獎兩星獎金：${(C(3, 2) * 5300 * multiplier).toFixed(0)} 元\n` : ""}${use3 ? `→ 中獎三星獎金：${(C(3, 3) * 57000 * multiplier).toFixed(0)} 元\n→ 總計：${(C(3,2)*5300*multiplier + C(3,3)*57000*multiplier).toFixed(0)} 元\n` : ""}\n若中 4 支號碼：\n${use2 ? `→ 中獎兩星獎金：${(C(4, 2) * 5300 * multiplier).toFixed(0)} 元\n` : ""}${use3 ? `→ 中獎三星獎金：${(C(4, 3) * 57000 * multiplier).toFixed(0)} 元\n` : ""}${use4 ? `→ 中獎四星獎金：${(C(4, 4) * 750000 * multiplier).toFixed(0)} 元\n→ 總計：${(C(4,2)*5300*multiplier + C(4,3)*57000*multiplier + C(4,4)*750000*multiplier).toFixed(0)} 元\n` : ""}\n`;
+
+  document.getElementById("comboResult").textContent = result;
+}
+
+loadData();
+updateStats();
+</script>
+</body>
 </html>
