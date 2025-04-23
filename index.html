@@ -101,7 +101,17 @@
     </a>
   </div>
   <hr>
-  <h3>連碰計算器</h3>
+  
+<h3>自動對獎區</h3>
+<div>
+  <label>投注號碼（用逗號分隔）：</label>
+  <input type="text" id="myNumbers" style="width:100%; margin-bottom:10px;"><br>
+  <label>開獎號碼（用逗號分隔）：</label>
+  <input type="text" id="drawNumbers" style="width:100%; margin-bottom:10px;"><br>
+  <button onclick="checkWinning()">計算中獎結果</button>
+</div>
+<hr>
+<h3>連碰計算器</h3>
   <div>
     <label>選擇使用的號碼數量（4~20）：</label>
     <input type="number" id="comboCount" min="4" max="20" value="4">
@@ -119,7 +129,26 @@
   <div>
     <button onclick="calculateCombinations()">計算結果</button>
   </div>
-  <div id="comboResult" style="margin-top: 20px; white-space: pre-wrap; font-size: 15px;"></div>
+  
+<hr>
+<h3>歷史對獎紀錄</h3>
+<table id="historyTable" border="1" cellpadding="6" style="width:100%; border-collapse: collapse;">
+  <thead>
+    <tr>
+      <th>日期</th>
+      <th>開獎號碼</th>
+      <th>自選號碼</th>
+      <th>玩法</th>
+      <th>倍數</th>
+      <th>命中號碼</th>
+      <th>命中星別</th>
+      <th>獎金</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<div id="comboResult" style="margin-top: 20px; white-space: pre-wrap; font-size: 15px;"></div>
 <script>
 const container = document.getElementById("numbers");
 const statsDiv = document.getElementById("stats");
@@ -271,10 +300,99 @@ function calculateCombinations() {
   result += `\n總投注金額：${totalCost.toFixed(0)} 元\n\n若中 2 支號碼：\n${use2 ? `→ 中獎兩星獎金：${(C(2, 2) * 5300 * multiplier).toFixed(0)} 元\n` : ""}\n若中 3 支號碼：\n${use2 ? `→ 中獎兩星獎金：${(C(3, 2) * 5300 * multiplier).toFixed(0)} 元\n` : ""}${use3 ? `→ 中獎三星獎金：${(C(3, 3) * 57000 * multiplier).toFixed(0)} 元\n→ 總計：${(C(3,2)*5300*multiplier + C(3,3)*57000*multiplier).toFixed(0)} 元\n` : ""}\n若中 4 支號碼：\n${use2 ? `→ 中獎兩星獎金：${(C(4, 2) * 5300 * multiplier).toFixed(0)} 元\n` : ""}${use3 ? `→ 中獎三星獎金：${(C(4, 3) * 57000 * multiplier).toFixed(0)} 元\n` : ""}${use4 ? `→ 中獎四星獎金：${(C(4, 4) * 750000 * multiplier).toFixed(0)} 元\n→ 總計：${(C(4,2)*5300*multiplier + C(4,3)*57000*multiplier + C(4,4)*750000*multiplier).toFixed(0)} 元\n` : ""}\n`;
 
   document.getElementById("comboResult").textContent = result;
+
+  const matchNums = myNums.filter(n => drawNums.includes(n));
+  const date = new Date().toLocaleDateString("zh-TW", { month: '2-digit', day: '2-digit' });
+  let hitStars = '', prize = 0;
+  if (matchCount === 2) {
+    hitStars = '2星';
+    prize = 5300 * multiplier;
+  }
+  if (matchCount === 3) {
+    hitStars = '2星、3星';
+    prize = (C(3,2)*5300 + C(3,3)*57000) * multiplier;
+  }
+  if (matchCount >= 4) {
+    hitStars = '2星、3星、4星';
+    prize = (C(4,2)*5300 + C(4,3)*57000 + C(4,4)*750000) * multiplier;
+  }
+  if (matchCount >= 2) {
+    const row = `<tr>
+      <td>${date}</td>
+      <td>${drawNums.join(".")}</td>
+      <td>${myNums.join(" ")}</td>
+      <td>2星3星4星</td>
+      <td>${multiplier}倍</td>
+      <td>${matchNums.join(", ")}</td>
+      <td>${hitStars}</td>
+      <td>${Math.round(prize)}元</td>
+    </tr>`;
+    document.querySelector("#historyTable tbody").insertAdjacentHTML("afterbegin", row);
+  }
+
 }
 
 loadData();
 updateStats();
+
+function checkWinning() {
+  const myNums = document.getElementById("myNumbers").value.split(/[,\s]+/).map(n => parseInt(n.trim(), 10)).filter(n => !isNaN(n));
+  const drawNums = document.getElementById("drawNumbers").value.split(/[,\s]+/).map(n => parseInt(n.trim(), 10)).filter(n => !isNaN(n));
+  const multiplier = parseFloat(document.getElementById("multiplier").value) || 1;
+  const matchCount = myNums.filter(n => drawNums.includes(n)).length;
+  let result = `你命中 ${matchCount} 支號碼\n`;
+
+  if (matchCount < 2) {
+    result += "未達最低中獎門檻\n";
+  } else {
+    if (matchCount === 2) {
+      result += `→ 中獎兩星獎金：${(5300 * multiplier).toFixed(0)} 元\n`;
+    }
+    if (matchCount === 3) {
+      result += `→ 中獎兩星獎金：${(C(3,2)*5300*multiplier).toFixed(0)} 元\n`;
+      result += `→ 中獎三星獎金：${(C(3,3)*57000*multiplier).toFixed(0)} 元\n`;
+      result += `→ 總計：${((C(3,2)*5300 + C(3,3)*57000) * multiplier).toFixed(0)} 元\n`;
+    }
+    if (matchCount >= 4) {
+      result += `→ 中獎兩星獎金：${(C(4,2)*5300*multiplier).toFixed(0)} 元\n`;
+      result += `→ 中獎三星獎金：${(C(4,3)*57000*multiplier).toFixed(0)} 元\n`;
+      result += `→ 中獎四星獎金：${(C(4,4)*750000*multiplier).toFixed(0)} 元\n`;
+      result += `→ 總計：${((C(4,2)*5300 + C(4,3)*57000 + C(4,4)*750000) * multiplier).toFixed(0)} 元\n`;
+    }
+  }
+  document.getElementById("comboResult").textContent = result;
+
+  const matchNums = myNums.filter(n => drawNums.includes(n));
+  const date = new Date().toLocaleDateString("zh-TW", { month: '2-digit', day: '2-digit' });
+  let hitStars = '', prize = 0;
+  if (matchCount === 2) {
+    hitStars = '2星';
+    prize = 5300 * multiplier;
+  }
+  if (matchCount === 3) {
+    hitStars = '2星、3星';
+    prize = (C(3,2)*5300 + C(3,3)*57000) * multiplier;
+  }
+  if (matchCount >= 4) {
+    hitStars = '2星、3星、4星';
+    prize = (C(4,2)*5300 + C(4,3)*57000 + C(4,4)*750000) * multiplier;
+  }
+  if (matchCount >= 2) {
+    const row = `<tr>
+      <td>${date}</td>
+      <td>${drawNums.join(".")}</td>
+      <td>${myNums.join(" ")}</td>
+      <td>2星3星4星</td>
+      <td>${multiplier}倍</td>
+      <td>${matchNums.join(", ")}</td>
+      <td>${hitStars}</td>
+      <td>${Math.round(prize)}元</td>
+    </tr>`;
+    document.querySelector("#historyTable tbody").insertAdjacentHTML("afterbegin", row);
+  }
+
+}
+
 </script>
 </body>
 </html>
