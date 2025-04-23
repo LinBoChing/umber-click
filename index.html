@@ -93,6 +93,9 @@
   </div>
   <div id="stats"></div>
   <div id="unselected"></div>
+<div style="margin-top: 10px; text-align: center;">
+  <button onclick="extractUnselectedToNote()">提取未選號碼至備註區</button>
+</div>
   <button onclick="clearNote()">清空備註</button><br>
   <textarea id="note" placeholder="備註區：可輸入自由內容..." oninput="saveNote()"></textarea>
   <div id="external-link">
@@ -451,6 +454,56 @@ function copyComboToHistory() {
   document.querySelector("#historyTable tbody").insertAdjacentHTML("afterbegin", row);
   saveHistory();
 }
+
+
+function extractUnselectedToNote() {
+  const noteBox = document.getElementById("note");
+  const rawText = document.getElementById("unselected").textContent;
+  const numbers = rawText.replace("尚未選取的號碼：", "").trim().split(/\s+/).filter(x => /^\d{2}$/.test(x));
+  const existing = noteBox.value.split(/\s+/);
+  const unique = numbers.filter(n => !existing.includes(n));
+  if (unique.length > 0) {
+    const sorted = unique.sort((a, b) => parseInt(a) - parseInt(b));
+    noteBox.value += (noteBox.value ? "\n" : "") + sorted.join(" ");
+    saveNote?.();
+  } else {
+    alert("備註區已有相同號碼，未新增重複內容");
+  }
+}
+
+
+function extractGroupSorted(title) {
+  const statsDiv = document.getElementById("stats");
+  const noteBox = document.getElementById("note");
+  const blocks = statsDiv.querySelectorAll(".group-title");
+  for (let block of blocks) {
+    if (block.textContent === title) {
+      const allNums = block.parentElement.textContent.replace(/\D/g, " ").split(/\s+/).filter(n => /^\d{2}$/.test(n));
+      const existing = noteBox.value.split(/\s+/);
+      const filtered = allNums.filter(n => !existing.includes(n));
+      if (filtered.length > 0) {
+        const sorted = filtered.sort((a, b) => parseInt(a) - parseInt(b));
+        noteBox.value += (noteBox.value ? "\n" : "") + sorted.join(" ");
+        saveNote?.();
+      } else {
+        alert("備註區已有相同號碼，未新增重複內容");
+      }
+    }
+  }
+}
+function insertGroupExtractButtons() {
+  const groups = document.querySelectorAll("#stats .group-title");
+  for (let group of groups) {
+    if (!group.nextSibling || group.nextSibling.nodeName !== "BUTTON") {
+      const btn = document.createElement("button");
+      btn.textContent = "提取";
+      btn.style.marginLeft = "10px";
+      btn.onclick = () => extractGroupSorted(group.textContent);
+      group.parentElement.insertBefore(btn, group.nextSibling);
+    }
+  }
+}
+setInterval(insertGroupExtractButtons, 1000);
 
 </script>
 </body>
