@@ -131,7 +131,13 @@
   </div>
   
 <hr>
-<h3>歷史對獎紀錄</h3>
+
+<h3>
+  歷史對獎紀錄
+  <button onclick="toggleHistory()" style="float:right;">展開/收合</button>
+</h3>
+<div id="historyWrapper" style="display:none;">
+
 <table id="historyTable" border="1" cellpadding="6" style="width:100%; border-collapse: collapse;">
   <thead>
     <tr>
@@ -146,9 +152,16 @@
     </tr>
   </thead>
   <tbody></tbody>
-</table>
+<th>操作</th>
+</tr></thead><tbody></tbody></table></div>
 
 <div id="comboResult" style="margin-top: 20px; white-space: pre-wrap; font-size: 15px;"></div>
+<div style="margin-top: 10px;">
+  <button onclick="copyComboToHistory()">將結果寫入歷史紀錄</button>
+</div>
+<!-- comboResult 原位置 -->
+<div id="comboResult_hidden" style="display:none;"
+ style="margin-top: 20px; white-space: pre-wrap; font-size: 15px;"></div>
 <script>
 const container = document.getElementById("numbers");
 const statsDiv = document.getElementById("stats");
@@ -327,7 +340,9 @@ function calculateCombinations() {
       <td>${hitStars}</td>
       <td>${Math.round(prize)}元</td>
     </tr>`;
-    document.querySelector("#historyTable tbody").insertAdjacentHTML("afterbegin", row);
+    row = row.replace("</tr>", '<td><button onclick="deleteRow(this)">刪除</button></td></tr>');
+document.querySelector("#historyTable tbody").insertAdjacentHTML("afterbegin", row);
+saveHistory();
   }
 
 }
@@ -388,9 +403,53 @@ function checkWinning() {
       <td>${hitStars}</td>
       <td>${Math.round(prize)}元</td>
     </tr>`;
-    document.querySelector("#historyTable tbody").insertAdjacentHTML("afterbegin", row);
+    row = row.replace("</tr>", '<td><button onclick="deleteRow(this)">刪除</button></td></tr>');
+document.querySelector("#historyTable tbody").insertAdjacentHTML("afterbegin", row);
+saveHistory();
   }
 
+}
+
+
+function toggleHistory() {
+  const wrapper = document.getElementById("historyWrapper");
+  wrapper.style.display = wrapper.style.display === "none" ? "block" : "none";
+}
+
+function saveHistory() {
+  const table = document.querySelector("#historyTable tbody");
+  const rows = Array.from(table.children).map(tr => tr.innerHTML);
+  localStorage.setItem("historyRecords", JSON.stringify(rows));
+}
+
+function loadHistory() {
+  const saved = JSON.parse(localStorage.getItem("historyRecords") || "[]");
+  const tbody = document.querySelector("#historyTable tbody");
+  saved.forEach(row => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = row;
+    tbody.appendChild(tr);
+  });
+}
+
+function deleteRow(btn) {
+  const tr = btn.parentNode.parentNode;
+  tr.remove();
+  saveHistory();
+}
+
+loadHistory();
+
+function copyComboToHistory() {
+  const content = document.getElementById("comboResult").textContent.trim();
+  if (!content) {
+    alert("目前沒有可寫入的內容");
+    return;
+  }
+  const date = new Date().toLocaleDateString("zh-TW", { month: '2-digit', day: '2-digit' });
+  const row = `<tr><td colspan="8" style="white-space:pre-wrap;"><strong>${date}</strong><br>${content}</td><td><button onclick="deleteRow(this)">刪除</button></td></tr>`;
+  document.querySelector("#historyTable tbody").insertAdjacentHTML("afterbegin", row);
+  saveHistory();
 }
 
 </script>
