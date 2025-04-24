@@ -114,13 +114,6 @@
 <button onclick="checkWinning()">計算中獎結果</button>
 </div>
 <hr/>
-
-<h3>快速編輯區</h3>
-<div>
-  <label>輸入號碼與玩法（範例：08 13 21 兩三四0.01）：</label><br/>
-  <textarea id="quickComboInput" rows="2" style="width:100%;"></textarea><br/>
-  <button onclick="applyQuickCombo()">帶入並計算</button>
-</div>
 <h3>連碰計算器</h3>
 <div>
 <label>選擇使用的號碼數量（4~20）：</label>
@@ -177,6 +170,7 @@
 </div>
 <div id="betResult" style="white-space: pre-wrap; margin-top: 10px; font-size: 15px;"></div>
 <script>
+
 function analyzeBets() {
   const chineseNumMap = {
     "十二": 12, "十一": 11, "十": 10,
@@ -219,7 +213,6 @@ function analyzeBets() {
     const line = input[i].trim();
     if (!line) continue;
 
-    const words = line.replace(/[.\d\s]/g, '');
     const zhMatch = line.match(/(十二|十一|十|九|八|七|六|五|四|三|二|一)(?=不出)/);
     const betMatch = line.match(/(\d+(\.\d+)?)/g);
     const bet = betMatch ? parseFloat(betMatch[betMatch.length - 1]) : 0;
@@ -227,23 +220,24 @@ function analyzeBets() {
     const numberMatches = line.match(/\d{1,2}/g);
     const nums = numberMatches ? numberMatches.map(n => n.padStart(2, '0')).filter(n => parseInt(n) >= 1 && parseInt(n) <= 39) : [];
 
-    // 如果是單純號碼行
     if (!line.includes("不出") && !line.includes("兩") && !line.includes("三") && !line.includes("四") && nums.length > 0) {
       lastNumbers = nums;
       continue;
     }
 
-    // 不出玩法（嚴格禁止從該行抓號碼，只能用 lastNumbers）
     if (line.includes("不出")) {
-      const count = zhMatch ? chineseNumMap[zhMatch[0]] : (numberMatches && numberMatches.length > 0 ? parseInt(numberMatches[0]) : lastNumbers.length);
-      const targetNumbers = lastNumbers;
+      // 從本行提取號碼，只取國字不出前的數字
+      const splitIndex = line.indexOf("不出");
+      const beforeText = line.substring(0, splitIndex);
+      const pureNums = beforeText.match(/\d{1,2}/g) || [];
+      const targetNumbers = pureNums.map(n => n.padStart(2, '0')).filter(n => parseInt(n) >= 1 && parseInt(n) <= 39);
+      const count = zhMatch ? chineseNumMap[zhMatch[0]] : targetNumbers.length;
       const hit = targetNumbers.filter(n => drawSet.has(n));
       const prize = (hit.length === 0 && prizeTable[count]) ? bet * prizeTable[count] : 0;
       result += `【不出】${targetNumbers.join('.')}（${count}不出${bet}）\n→ 命中 ${hit.length} 支: [${hit.join(', ')}]\n→ ${(hit.length === 0 ? '過關！獎金：' + prize.toFixed(2) : '未過關')}\n\n`;
       continue;
     }
 
-    // 連碰玩法
     if (line.includes("兩") || line.includes("三") || line.includes("四")) {
       const stars = [];
       if (line.includes("兩")) stars.push(2);
@@ -271,50 +265,6 @@ function analyzeBets() {
   }
 
   document.getElementById("betResult").textContent = result;
-}
-
-
-
-
-function applyQuickCombo() {
-  const input = document.getElementById("quickComboInput").value.trim();
-  const parts = input.split(/\s+/); // 按空白切開
-  const nums = [];
-
-  // 處理號碼，遇到不是 1~2 位數字就停
-  for (let i = 0; i < parts.length; i++) {
-    if (/^\d{1,2}$/.test(parts[i]) && parseInt(parts[i]) >= 1 && parseInt(parts[i]) <= 39) {
-      nums.push(parts[i].padStart(2, '0'));
-    } else {
-      break;
-    }
-  }
-
-  const restStart = input.indexOf(nums[nums.length - 1]) + 2;
-  const rest = input.slice(restStart); // 取出號碼後剩下的內容
-  const use2 = rest.includes("兩");
-  const use3 = rest.includes("三");
-  const use4 = rest.includes("四");
-
-  const multiplierMatch = rest.match(/(\d+\.\d+|\d+)/g);
-  const multiplier = multiplierMatch ? parseFloat(multiplierMatch[multiplierMatch.length - 1]) : 1;
-
-  if (nums.length < 4 || nums.length > 20) {
-    alert("請輸入 4 至 20 個號碼");
-    return;
-  }
-
-  // 設定畫面
-  document.getElementById("comboCount").value = nums.length;
-  document.getElementById("star2").checked = use2;
-  document.getElementById("star3").checked = use3;
-  document.getElementById("star4").checked = use4;
-  document.getElementById("multiplier").value = multiplier;
-
-  // 設定供計算用的 myNums
-  window.myNums = nums.map(n => parseInt(n, 10));
-
-  calculateCombinations();
 }
 
 </script>
