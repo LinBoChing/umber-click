@@ -1,10 +1,11 @@
 <!DOCTYPE html>
+
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <title>號碼計數器</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
+<meta charset="utf-8"/>
+<title>號碼計數器</title>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<style>
     body {
       font-family: sans-serif;
       padding: 20px;
@@ -78,93 +79,198 @@
   </style>
 </head>
 <body>
-  <h2 style="text-align:center;">點選號碼：01~39</h2>
-  <div id="controls">
-    <button onclick="resetAll()">清除所有記錄</button>
-    <button onclick="undoLast()">恢復上一動</button>
-  </div>
-  <div id="numbers" class="grid"></div>
-  <div style="margin-top: 20px; text-align: center;">
-    <label for="numberInput"><strong>快速貼上號碼（可使用空格、逗號、點號分隔）：</strong></label><br>
-    <textarea id="numberInput" rows="3" style="width: 100%; max-width: 400px; margin-top: 5px;"></textarea><br>
-    <button onclick="pasteFromClipboard()">貼上剪貼簿</button>
-    <button onclick="clearInput()">清除內容</button>
-    <button onclick="applyNumbers()">套用號碼</button>
-  </div>
-  <div id="stats"></div>
-  <div id="unselected"></div>
-<div style="margin-top: 10px; text-align: center;">
-  <button onclick="extractUnselectedToNote()">提取未選號碼至備註區</button>
+<h2 style="text-align:center;">點選號碼：01~39</h2>
+<div id="controls">
+<button onclick="resetAll()">清除所有記錄</button>
+<button onclick="undoLast()">恢復上一動</button>
 </div>
-  <button onclick="clearNote()">清空備註</button><br>
-  <textarea id="note" placeholder="備註區：可輸入自由內容..." oninput="saveNote()"></textarea>
-  <div id="external-link">
-    <a href="https://www.lot539.com/lottery/539/lost/desc/mis" target="_blank" rel="noopener noreferrer">
+<div class="grid" id="numbers"></div>
+<div style="margin-top: 20px; text-align: center;">
+<label for="numberInput"><strong>快速貼上號碼（可使用空格、逗號、點號分隔）：</strong></label><br/>
+<textarea id="numberInput" rows="3" style="width: 100%; max-width: 400px; margin-top: 5px;"></textarea><br/>
+<button onclick="pasteFromClipboard()">貼上剪貼簿</button>
+<button onclick="clearInput()">清除內容</button>
+<button onclick="applyNumbers()">套用號碼</button>
+</div>
+<div id="stats"></div>
+<div id="unselected"></div>
+<div style="margin-top: 10px; text-align: center;">
+<button onclick="extractUnselectedToNote()">提取未選號碼至備註區</button>
+</div>
+<button onclick="clearNote()">清空備註</button><br/>
+<textarea id="note" oninput="saveNote()" placeholder="備註區：可輸入自由內容..."></textarea>
+<div id="external-link">
+<a href="https://www.lot539.com/lottery/539/lost/desc/mis" rel="noopener noreferrer" target="_blank">
       查看未開統計（另開分頁）
     </a>
-  </div>
-  <hr>
-  
+</div>
+<hr/>
 <h3>自動對獎區</h3>
 <div>
-  <label>投注號碼（用逗號分隔）：</label>
-  <input type="text" id="myNumbers" style="width:100%; margin-bottom:10px;"><br>
-  <label>開獎號碼（用逗號分隔）：</label>
-  <input type="text" id="drawNumbers" style="width:100%; margin-bottom:10px;"><br>
-  <button onclick="checkWinning()">計算中獎結果</button>
+<label>投注號碼（用逗號分隔）：</label>
+<input id="myNumbers" style="width:100%; margin-bottom:10px;" type="text"/><br/>
+<label>開獎號碼（用逗號分隔）：</label>
+<input id="drawNumbers" style="width:100%; margin-bottom:10px;" type="text"/><br/>
+<button onclick="checkWinning()">計算中獎結果</button>
 </div>
-<hr>
+<hr/>
 <h3>連碰計算器</h3>
-  <div>
-    <label>選擇使用的號碼數量（4~20）：</label>
-    <input type="number" id="comboCount" min="4" max="20" value="4">
-  </div>
-  <div>
-    <label>玩法選擇：</label><br>
-    <label><input type="checkbox" id="star2" checked> 2星</label>
-    <label><input type="checkbox" id="star3" checked> 3星</label>
-    <label><input type="checkbox" id="star4" checked> 4星</label>
-  </div>
-  <div>
-    <label>投注倍數（可輸入小數）：</label>
-    <input type="number" id="multiplier" step="0.1" min="0.1" value="1">
-  </div>
-  <div>
-    <button onclick="calculateCombinations()">計算結果</button>
-  </div>
-  
-<hr>
-
+<div>
+<label>選擇使用的號碼數量（4~20）：</label>
+<input id="comboCount" max="20" min="4" type="number" value="4"/>
+</div>
+<div>
+<label>玩法選擇：</label><br/>
+<label><input checked="" id="star2" type="checkbox"/> 2星</label>
+<label><input checked="" id="star3" type="checkbox"/> 3星</label>
+<label><input checked="" id="star4" type="checkbox"/> 4星</label>
+</div>
+<div>
+<label>投注倍數（可輸入小數）：</label>
+<input id="multiplier" min="0.1" step="0.1" type="number" value="1"/>
+</div>
+<div>
+<button onclick="calculateCombinations()">計算結果</button>
+</div>
+<hr/>
 <h3>
   歷史對獎紀錄
   <button onclick="toggleHistory()" style="float:right;">展開/收合</button>
 </h3>
 <div id="historyWrapper" style="display:none;">
-
-<table id="historyTable" border="1" cellpadding="6" style="width:100%; border-collapse: collapse;">
-  <thead>
-    <tr>
-      <th>日期</th>
-      <th>開獎號碼</th>
-      <th>自選號碼</th>
-      <th>玩法</th>
-      <th>倍數</th>
-      <th>命中號碼</th>
-      <th>命中星別</th>
-      <th>獎金</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
+<table border="1" cellpadding="6" id="historyTable" style="width:100%; border-collapse: collapse;">
+<thead>
+<tr>
+<th>日期</th>
+<th>開獎號碼</th>
+<th>自選號碼</th>
+<th>玩法</th>
+<th>倍數</th>
+<th>命中號碼</th>
+<th>命中星別</th>
+<th>獎金</th>
+</tr>
+</thead>
+<tbody></tbody>
 <th>操作</th>
-</tr></thead><tbody></tbody></table></div>
-
+<tbody></tbody></table></div>
 <div id="comboResult" style="margin-top: 20px; white-space: pre-wrap; font-size: 15px;"></div>
 <div style="margin-top: 10px;">
-  <button onclick="copyComboToHistory()">將結果寫入歷史紀錄</button>
+<button onclick="copyComboToHistory()">將結果寫入歷史紀錄</button>
 </div>
 <!-- comboResult 原位置 -->
-<div id="comboResult_hidden" style="display:none;"
- style="margin-top: 20px; white-space: pre-wrap; font-size: 15px;"></div>
+<hr/>
+<h3>下注識別區</h3>
+<div>
+<label>輸入下注內容（可多行，每行一筆）：</label><br/>
+<textarea id="betInput" rows="5" style="width:100%; margin-top:5px;"></textarea><br/>
+<label>開獎號碼（用逗號或空格分隔）：</label><br/>
+<input id="drawInput" style="width:100%; margin-bottom:10px;" type="text"/><br/>
+<button onclick="analyzeBets()">計算結果</button>
+</div>
+<div id="betResult" style="white-space: pre-wrap; margin-top: 10px; font-size: 15px;"></div>
+
+
+<script>
+function analyzeBets() {
+  const chineseNumMap = {
+    "十二": 12, "十一": 11, "十": 10,
+    "九": 9, "八": 8, "七": 7, "六": 6,
+    "五": 5, "四": 4, "三": 3, "二": 2, "一": 1
+  };
+
+  const input = document.getElementById("betInput").value.trim().split(/\n/);
+  const draw = document.getElementById("drawInput").value.trim().replace(/[.\n,]/g, ' ');
+  const drawNums = draw.split(/\s+/).map(x => x.padStart(2, '0')).filter(x => /^\d{2}$/.test(x));
+  const drawSet = new Set(drawNums);
+
+  const prizeTable = {
+    5: 1.9, 6: 2.22, 7: 2.58, 8: 3.0,
+    9: 3.6, 10: 4.2, 11: 5.05, 12: 6.1
+  };
+  const starPrize = { 2: 5300, 3: 57000, 4: 750000 };
+
+  function getCombinations(arr, k) {
+    const result = [];
+    const recurse = (start, combo) => {
+      if (combo.length === k) {
+        result.push([...combo]);
+        return;
+      }
+      for (let i = start; i < arr.length; i++) {
+        combo.push(arr[i]);
+        recurse(i + 1, combo);
+        combo.pop();
+      }
+    };
+    recurse(0, []);
+    return result;
+  }
+
+  let result = "【除錯】開獎號碼: [" + drawNums.join(', ') + "]\n\n";
+  let lastNumbers = [];
+
+  for (let i = 0; i < input.length; i++) {
+    const line = input[i].trim();
+    if (!line) continue;
+
+    const words = line.replace(/[.\d\s]/g, '');
+    const zhMatch = line.match(/(十二|十一|十|九|八|七|六|五|四|三|二|一)(?=不出)/);
+    const betMatch = line.match(/(\d+(\.\d+)?)/g);
+    const bet = betMatch ? parseFloat(betMatch[betMatch.length - 1]) : 0;
+
+    const numberMatches = line.match(/\d{1,2}/g);
+    const nums = numberMatches ? numberMatches.map(n => n.padStart(2, '0')).filter(n => parseInt(n) >= 1 && parseInt(n) <= 39) : [];
+
+    // 如果是單純號碼行
+    if (!line.includes("不出") && !line.includes("兩") && !line.includes("三") && !line.includes("四") && nums.length > 0) {
+      lastNumbers = nums;
+      continue;
+    }
+
+    // 不出玩法（嚴格禁止從該行抓號碼，只能用 lastNumbers）
+    if (line.includes("不出")) {
+      const count = zhMatch ? chineseNumMap[zhMatch[0]] : (numberMatches && numberMatches.length > 0 ? parseInt(numberMatches[0]) : lastNumbers.length);
+      const targetNumbers = lastNumbers;
+      const hit = targetNumbers.filter(n => drawSet.has(n));
+      const prize = (hit.length === 0 && prizeTable[count]) ? bet * prizeTable[count] : 0;
+      result += `【不出】${targetNumbers.join('.')}（${count}不出${bet}）\n→ 命中 ${hit.length} 支: [${hit.join(', ')}]\n→ ${(hit.length === 0 ? '過關！獎金：' + prize.toFixed(2) : '未過關')}\n\n`;
+      continue;
+    }
+
+    // 連碰玩法
+    if (line.includes("兩") || line.includes("三") || line.includes("四")) {
+      const stars = [];
+      if (line.includes("兩")) stars.push(2);
+      if (line.includes("三")) stars.push(3);
+      if (line.includes("四")) stars.push(4);
+      const targetNumbers = nums.length > 0 ? nums : lastNumbers;
+      const match = targetNumbers.filter(n => drawSet.has(n));
+      let total = 0;
+      let details = "";
+
+      stars.forEach(star => {
+        const allCombos = getCombinations(targetNumbers, star);
+        const hitCombos = allCombos.filter(group => group.every(n => drawSet.has(n)));
+        const hitCount = hitCombos.length;
+        if (hitCount > 0) {
+          const prize = hitCount * starPrize[star] * bet;
+          total += prize;
+          details += `→ 中獎 ${star}星：${hitCount} 組，${Math.round(prize)} 元\n`;
+        }
+      });
+
+      const label = stars.map(s => `${s}星`).join("、");
+      result += `【${label}連碰】（${bet}倍）\n→ 命中 ${match.length} 支: [${match.join(', ')}]\n${details}→ 預估獎金：${Math.round(total)}\n\n`;
+    }
+  }
+
+  document.getElementById("betResult").textContent = result;
+}
+</script>
+
+
+<div id="comboResult_hidden" style="margin-top: 20px; white-space: pre-wrap; font-size: 15px;"></div>
 <script>
 const container = document.getElementById("numbers");
 const statsDiv = document.getElementById("stats");
@@ -297,7 +403,18 @@ function calculateCombinations() {
   let totalCost = 0;
   let totalPrize = 0;
 
-  const prizeTable = { 2: 5300, 3: 57000, 4: 750000 };
+  
+const prizeTable = {
+  5: 1.9,
+  6: 2.22,
+  7: 2.58,
+  8: 3.0,
+  9: 3.6,
+  10: 4.2,
+  11: 5.05,
+  12: 6.1
+};
+
   const selectedStars = [];
   if (use2) selectedStars.push(2);
   if (use3) selectedStars.push(3);
