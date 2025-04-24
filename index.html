@@ -98,7 +98,7 @@
 <button onclick="extractUnselectedToNote()">提取未選號碼至備註區</button>
 </div>
 <button onclick="clearNote()">清空備註</button><br/>
-<textarea id="note" oninput="saveNote()" placeholder="備註區：可輸入自由內容..."></textarea>
+<textarea id="note" oninput="saveNote()" placeholder="備註區：可輸入自由內容..."></textarea><button onclick="copyNoteToBetInput()">將備註內容貼到下注識別區</button>
 <div id="external-link">
 <a href="https://www.lot539.com/lottery/539/lost/desc/mis" rel="noopener noreferrer" target="_blank">
       查看未開統計（另開分頁）
@@ -163,14 +163,12 @@
 <h3>下注識別區</h3>
 <div>
 <label>輸入下注內容（可多行，每行一筆）：</label><br/>
-<textarea id="betInput" rows="5" style="width:100%; margin-top:5px;"></textarea><br/>
+<textarea id="betInput" rows="5" style="width:100%; margin-top:5px;"></textarea><button onclick="clearBetInput()">清空下注內容</button><br/>
 <label>開獎號碼（用逗號或空格分隔）：</label><br/>
 <input id="drawInput" style="width:100%; margin-bottom:10px;" type="text"/><br/>
 <button onclick="analyzeBets()">計算結果</button>
 </div>
 <div id="betResult" style="white-space: pre-wrap; margin-top: 10px; font-size: 15px;"></div>
-
-
 <script>
 function analyzeBets() {
   const chineseNumMap = {
@@ -268,8 +266,6 @@ function analyzeBets() {
   document.getElementById("betResult").textContent = result;
 }
 </script>
-
-
 <div id="comboResult_hidden" style="margin-top: 20px; white-space: pre-wrap; font-size: 15px;"></div>
 <script>
 const container = document.getElementById("numbers");
@@ -623,5 +619,43 @@ function insertGroupExtractButtons() {
 setInterval(insertGroupExtractButtons, 1000);
 
 </script>
-</body>
+<script>
+function clearBetInput() {
+  const betInput = document.getElementById("betInput");
+  if (betInput) {
+    betInput.value = "";
+    localStorage.removeItem("betInputText");
+  }
+}
+function saveBetInput() {
+  const betInput = document.getElementById("betInput");
+  if (betInput) {
+    localStorage.setItem("betInputText", betInput.value);
+  }
+}
+function loadBetInput() {
+  const saved = localStorage.getItem("betInputText");
+  if (saved) {
+    document.getElementById("betInput").value = saved;
+  }
+}
+window.addEventListener("load", loadBetInput);
+document.addEventListener("DOMContentLoaded", () => {
+  const betInput = document.getElementById("betInput");
+  if (betInput) {
+    betInput.addEventListener("input", saveBetInput);
+  }
+});
+</script><script>
+function copyNoteToBetInput() {
+  const noteText = document.getElementById("note").value.trim();
+  const betInput = document.getElementById("betInput");
+  if (noteText) {
+    betInput.value = noteText;
+    alert("備註內容已貼上到下注識別區");
+  } else {
+    alert("備註區沒有內容");
+  }
+}
+</script></body>
 </html>
