@@ -133,31 +133,7 @@
 <button onclick="calculateCombinations()">計算結果</button>
 </div>
 <hr/>
-<h3>
-  歷史對獎紀錄
-  <button onclick="toggleHistory()" style="float:right;">展開/收合</button>
-</h3>
-<div id="historyWrapper" style="display:none;">
-<table border="1" cellpadding="6" id="historyTable" style="width:100%; border-collapse: collapse;">
-<thead>
-<tr>
-<th>日期</th>
-<th>開獎號碼</th>
-<th>自選號碼</th>
-<th>玩法</th>
-<th>倍數</th>
-<th>命中號碼</th>
-<th>命中星別</th>
-<th>獎金</th>
-</tr>
-</thead>
-<tbody></tbody>
-<th>操作</th>
-<tbody></tbody></table></div>
 <div id="comboResult" style="margin-top: 20px; white-space: pre-wrap; font-size: 15px;"></div>
-<div style="margin-top: 10px;">
-<button onclick="copyComboToHistory()">將結果寫入歷史紀錄</button>
-</div>
 <!-- comboResult 原位置 -->
 <hr/>
 <h3>下注識別區</h3>
@@ -556,8 +532,6 @@ function deleteRow(btn) {
   saveHistory();
 }
 
-loadHistory();
-
 function copyComboToHistory() {
   const content = document.getElementById("comboResult").textContent.trim();
   if (!content) {
@@ -659,5 +633,25 @@ function copyNoteToBetInput() {
     alert("備註區沒有內容");
   }
 }
+</script><script>
+function saveDrawInput() {
+  const input = document.getElementById("drawInput");
+  if (input) {
+    localStorage.setItem("drawInputText", input.value);
+  }
+}
+function loadDrawInput() {
+  const saved = localStorage.getItem("drawInputText");
+  if (saved) {
+    document.getElementById("drawInput").value = saved;
+  }
+}
+window.addEventListener("load", loadDrawInput);
+document.addEventListener("DOMContentLoaded", () => {
+  const input = document.getElementById("drawInput");
+  if (input) {
+    input.addEventListener("input", saveDrawInput);
+  }
+});
 </script></body>
 </html>
