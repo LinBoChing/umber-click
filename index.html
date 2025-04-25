@@ -219,11 +219,16 @@ function analyzeBets() {
       if (line.includes("兩")) stars.push(2);
       if (line.includes("三")) stars.push(3);
       if (line.includes("四")) stars.push(4);
+      const betMatch = line.match(/(兩|三|四)+\s*(\d+\.\d+)/);
+      const bet = betMatch ? parseFloat(betMatch[2]) : 0;
+      let cleanLine = line;
+      if (betMatch) cleanLine = line.replace(betMatch[0], "");
+      const numberMatches = cleanLine.match(/\d{1,2}/g);
+      let nums = numberMatches ? numberMatches.map(n => n.padStart(2, "0")).filter(n => parseInt(n) >= 1 && parseInt(n) <= 39) : [];
       const targetNumbers = nums.length > 0 ? nums : lastNumbers;
       const match = targetNumbers.filter(n => drawSet.has(n));
       let total = 0;
       let details = "";
-
       stars.forEach(star => {
         const allCombos = getCombinations(targetNumbers, star);
         const hitCombos = allCombos.filter(group => group.every(n => drawSet.has(n)));
@@ -234,9 +239,8 @@ function analyzeBets() {
           details += `→ 中獎 ${star}星：${hitCount} 組，${Math.round(prize)} 元\n`;
         }
       });
-
       const label = stars.map(s => `${s}星`).join("、");
-      result += `【${label}連碰】（${bet}倍）\n→ 命中 ${match.length} 支: [${match.join(', ')}]\n${details}→ 預估獎金：${Math.round(total)}\n\n`;
+      result += `【${label}連碰】（${bet}倍）\n→ 命中 ${match.length} 支: [${match.join(", ")}]\n${details}→ 預估獎金：${Math.round(total)}\n\n`;
     }
   }
 
