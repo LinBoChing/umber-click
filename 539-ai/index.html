@@ -1,1 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>539 AI選號神器（修正版 - 自動抓取）</title>
+  <style>
+    body {
+      font-family: "Microsoft JhengHei", sans-serif;
+      background-color: #f0f0f0;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+    }
+    textarea {
+      width: 100%;
+      height: 150px;
+      font-size: 16px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    button {
+      display: block;
+      margin: 10px auto;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      background-color: #27ae60;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #1e8449;
+    }
+    .result {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 15px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .numbers {
+      font-size: 28px;
+      text-align: center;
+      letter-spacing: 10px;
+      margin-bottom: 10px;
+    }
+    .analysis {
+      font-size: 14px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <h1>539 AI選號神器（修正版 - 自動抓取）</h1>
 
+  <button onclick="autoFetch()">自動擷取開獎號碼</button>
+  <textarea id="historyInput" placeholder="開獎號碼會自動填入此處，也可自行修改"></textarea>
+  <button onclick="analyze()">產生推薦</button>
+
+  <div class="result">
+    <div class="numbers" id="numbers">-- -- -- -- --</div>
+    <div class="analysis" id="analysis">請輸入或擷取開獎資料後產生推薦</div>
+  </div>
+
+  <script>
+    async function autoFetch() {
+      try {
+        const res = await fetch("https://corsproxy.io/?https://www.dalotto.com.tw/history/daily539");
+        const html = await res.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const tds = Array.from(doc.querySelectorAll("td"));
+        const allNums = [];
+        for (let i = 0; i < tds.length; i++) {
+          const text = tds[i].textContent.trim();
+          if (/^\d{2}$/.test(text)) {
+            allNums.push(text);
+          }
+        }
+
+        const lines = [];
+        for (let i = 0; i < allNums.length; i += 5) {
+          const group = allNums.slice(i, i + 5);
+          if (group.length === 5) lines.push(group.join(" "));
+          if (lines.length >= 50) break;
+        }
+
+        if (lines.length === 0) throw "未找到任何有效號碼";
+
+        document.getElementById("historyInput").value = lines.join("\n");
+        analyze();
+      } catch (e) {
+        alert("擷取失敗：" + e);
+      }
+    }
+
+    function analyze() {
+      const input = document.getElementById("historyInput").value.trim();
+      const lines = input.split("\n").filter(line => line.trim().length > 0);
+      const numbers = [];
+
+      for (let line of lines) {
+        const nums = line.trim().match(/\d{2}/g)?.map(n => parseInt(n)).filter(n => n >= 1 && n <= 39);
+        if (nums?.length === 5) numbers.push(nums);
+      }
+
+      const freq = {};
+      for (const row of numbers) {
+        for (const n of row) {
+          freq[n] = (freq[n] || 0) + 1;
+        }
+      }
+
+      const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]);
+      const hot = sorted.slice(-5).map(n => parseInt(n[0]));
+      const cold = sorted.slice(0, 5).map(n => parseInt(n[0]));
+
+      const recommend = new Set([...hot.slice(0, 2), ...cold.slice(0, 3)]);
+      while (recommend.size < 5) {
+        const r = Math.floor(Math.random() * 39) + 1;
+        recommend.add(r);
+      }
+
+      const final = [...recommend].sort((a, b) => a - b);
+      const formatted = final.map(n => n.toString().padStart(2, '0'));
+      const tails = final.map(n => n % 10);
+
+      document.getElementById("numbers").innerText = formatted.join(" ");
+      document.getElementById("analysis").innerHTML = `
+        - 熱號：${hot.map(n => n.toString().padStart(2, '0')).join("、")}<br>
+        - 冷號：${cold.map(n => n.toString().padStart(2, '0')).join("、")}<br>
+        - 尾數分布：${tails.join("、")}<br>
+        - 建議玩法：兩星連碰（${formatted[0]}-${formatted[1]}）
+      `;
+    }
+  </script>
+</body>
+</html>
