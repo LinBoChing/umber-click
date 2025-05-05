@@ -77,6 +77,34 @@
       font-size: 16px;
     }
   </style>
+
+<script>
+function sortBetLines() {
+  const betInput = document.getElementById("betInput");
+  if (!betInput) return;
+  const lines = betInput.value.trim().split(/\n+/);
+  const sortedLines = lines.map(line => {
+    const tokens = line.trim().split(/\s+/);
+    const numbers = [];
+    let suffixIndex = tokens.length;
+    for (let i = 0; i < tokens.length; i++) {
+      const t = tokens[i];
+      if (/^\d{1,2}$/.test(t) && parseInt(t) >= 1 && parseInt(t) <= 39) {
+        numbers.push(t.padStart(2, '0'));
+      } else {
+        suffixIndex = i;
+        break;
+      }
+    }
+    const sorted = numbers.sort((a, b) => parseInt(a) - parseInt(b));
+    const suffix = tokens.slice(suffixIndex).join(" ");
+    return sorted.join(" ") + (suffix ? " " + suffix : "");
+  });
+  betInput.value = sortedLines.join("\n");
+  alert("每注號碼已排序完成");
+}
+</script>
+
 </head>
 <body>
 <h2 style="text-align:center;">點選號碼：01~39</h2>
@@ -146,7 +174,8 @@
 <h3>下注識別區</h3>
 <div>
 <label>輸入下注內容（可多行，每行一筆）：</label><br/>
-<textarea id="betInput" rows="5" style="width:100%; margin-top:5px;"></textarea><button onclick="clearBetInput()">清空下注內容</button><br/>
+<textarea id="betInput" rows="5" style="width:100%; margin-top:5px;"></textarea><button onclick="clearBetInput()">清空下注內容</button>
+<button onclick="sortBetLines()">每注號碼排序（由小到大）</button><br/>
 <label>開獎號碼（用逗號或空格分隔）：</label><br/>
 <input id="drawInput" style="width:100%; margin-bottom:10px;" type="text"/><br/>
 <button onclick="analyzeBets()">計算結果</button>
@@ -167,7 +196,7 @@ function analyzeBets() {
   const drawSet = new Set(drawNums);
 
   const prizeTable = {
-    5: 1.9, 6: 2.22, 7: 2.58, 8: 3.0,
+    5: 1.9, 6: 2.2, 7: 2.58, 8: 3.0,
     9: 3.6, 10: 4.2, 11: 5.05, 12: 6.1
   };
   const starPrize = { 2: 5300, 3: 57000, 4: 750000 };
@@ -430,7 +459,7 @@ function calculateCombinations() {
   
 const prizeTable = {
   5: 1.9,
-  6: 2.22,
+  6: 2.2,
   7: 2.58,
   8: 3.0,
   9: 3.6,
@@ -703,5 +732,31 @@ document.addEventListener("DOMContentLoaded", () => {
     input.addEventListener("input", saveDrawInput);
   }
 });
+<script>
+function sortBetLines() {
+  const betInput = document.getElementById("betInput");
+  const lines = betInput.value.trim().split(/\n+/);
+  const sortedLines = lines.map(line => {
+    const tokens = line.trim().split(/\s+/);
+    const numbers = [];
+    let suffixIndex = tokens.length;
+
+    for (let i = 0; i < tokens.length; i++) {
+      const t = tokens[i];
+      if (/^\d{1,2}$/.test(t) && parseInt(t) >= 1 && parseInt(t) <= 39) {
+        numbers.push(t.padStart(2, '0'));
+      } else {
+        suffixIndex = i;
+        break;
+      }
+    }
+
+    const sorted = numbers.sort((a, b) => parseInt(a) - parseInt(b));
+    const suffix = tokens.slice(suffixIndex).join(" ");
+    return sorted.join(" ") + (suffix ? " " + suffix : "");
+  });
+  betInput.value = sortedLines.join("\n");
+  alert("每注號碼已排序完成");
+}
 </script></body>
 </html>
