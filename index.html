@@ -35,6 +35,14 @@
     .count-2 { background-color: #33cc33; color: white; }
     .count-3 { background-color: #ff9933; color: white; }
     .count-more { background-color: #cc3333; color: white; }
+    .count-4  { background-color: #9966cc; color: white; }
+    .count-5  { background-color: #ff6666; color: white; }
+    .count-6  { background-color: #00cccc; color: white; }
+    .count-7  { background-color: #ffcc00; color: black; }
+    .count-8  { background-color: #cc66ff; color: white; }
+    .count-9  { background-color: #66cc66; color: white; }
+    .count-10 { background-color: #ff6699; color: white; }
+    
     .group-title {
       display: inline-block;
       background-color: #444;
@@ -353,7 +361,7 @@ function updateStats() {
     div.className = "number";
     div.textContent = num;
     if (clickCounts[num]) {
-      div.classList.add("count-" + (clickCounts[num] > 3 ? "more" : clickCounts[num]));
+      div.classList.add("count-" + (clickCounts[num] > 10 ? "more" : clickCounts[num]));
       div.textContent = `${num} (${clickCounts[num]})`;
     } else {
       unselected.push(num);
@@ -646,7 +654,8 @@ function extractGroupSorted(title) {
   const blocks = statsDiv.querySelectorAll(".group-title");
   for (let block of blocks) {
     if (block.textContent === title) {
-      const allNums = block.parentElement.textContent.replace(/\D/g, " ").split(/\s+/).filter(n => /^\d{2}$/.test(n));
+      const rawText = block.parentElement.textContent;
+      const allNums = [...rawText.matchAll(/\b\d{2}(?=\s|\(|$)/g)].map(m => m[0]);
       const existing = noteBox.value.split(/\s+/);
       const filtered = allNums.filter(n => !existing.includes(n));
       if (filtered.length > 0) {
