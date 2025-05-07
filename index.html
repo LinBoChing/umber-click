@@ -85,7 +85,6 @@
       font-size: 16px;
     }
   </style>
-
 <script>
 function sortBetLines() {
   const betInput = document.getElementById("betInput");
@@ -112,7 +111,6 @@ function sortBetLines() {
   alert("每注號碼已排序完成");
 }
 </script>
-
 </head>
 <body>
 <h2 style="text-align:center;">點選號碼：01~39</h2>
@@ -134,7 +132,7 @@ function sortBetLines() {
 <button onclick="extractUnselectedToNote()">提取未選號碼至備註區</button>
 </div>
 <button onclick="clearNote()">清空備註</button><br/>
-<textarea id="note" oninput="saveNote()" placeholder="備註區：可輸入自由內容..."></textarea><button onclick="copyNoteToBetInput()">將備註內容貼到下注識別區</button>
+<textarea id="note" oninput="saveNote()" placeholder="備註區：可輸入自由內容..."></textarea><div id="relocated-tools" style="margin-top: 10px;"><button onclick="sortNoteLines()">每注號碼排序（由小到大）</button><br/><label>開獎號碼（用逗號分隔）：</label><input id="drawInput" style="width:100%; margin-bottom:10px;" type="text"/><br/><button onclick="analyzeBets()">計算結果</button><div id="betResult" style="white-space: pre-wrap; margin-top: 10px; font-size: 15px;"></div></div>
 <div id="external-link">
 <a href="https://www.lot539.com/lottery/539/lost/desc/mis" rel="noopener noreferrer" target="_blank">
       查看未開統計（另開分頁）
@@ -145,19 +143,17 @@ function sortBetLines() {
 <div>
 <label>投注號碼（用逗號分隔）：</label>
 <input id="myNumbers" style="width:100%; margin-bottom:10px;" type="text"/><br/>
-<label>開獎號碼（用逗號分隔）：</label>
 <input id="drawNumbers" style="width:100%; margin-bottom:10px;" type="text"/><br/>
 <button onclick="checkWinning()">計算中獎結果</button>
 </div>
 <hr/>
 <h3>快速編輯區</h3>
 <div>
-  <label>輸入號碼與玩法（範例：08 13 21 兩三四0.01）：</label><br/>
-  <textarea id="quickComboInput" rows="2" style="width:100%;"></textarea><br/>
-  <button onclick="applyQuickCombo()">帶入並計算</button>
+<label>輸入號碼與玩法（範例：08 13 21 兩三四0.01）：</label><br/>
+<textarea id="quickComboInput" rows="2" style="width:100%;"></textarea><br/>
+<button onclick="applyQuickCombo()">帶入並計算</button>
 </div>
 <h3>連碰計算器</h3>
-
 <div>
 <label>選擇使用的號碼數量（4~20）：</label>
 <input id="comboCount" max="20" min="4" type="number" value="4"/>
@@ -179,16 +175,6 @@ function sortBetLines() {
 <div id="comboResult" style="margin-top: 20px; white-space: pre-wrap; font-size: 15px;"></div>
 <!-- comboResult 原位置 -->
 <hr/>
-<h3>下注識別區</h3>
-<div>
-<label>輸入下注內容（可多行，每行一筆）：</label><br/>
-<textarea id="betInput" rows="5" style="width:100%; margin-top:5px;"></textarea><button onclick="clearBetInput()">清空下注內容</button>
-<button onclick="sortBetLines()">每注號碼排序（由小到大）</button><br/>
-<label>開獎號碼（用逗號或空格分隔）：</label><br/>
-<input id="drawInput" style="width:100%; margin-bottom:10px;" type="text"/><br/>
-<button onclick="analyzeBets()">計算結果</button>
-</div>
-<div id="betResult" style="white-space: pre-wrap; margin-top: 10px; font-size: 15px;"></div>
 <script>
 
 function analyzeBets() {
@@ -198,7 +184,7 @@ function analyzeBets() {
     "五": 5, "四": 4, "三": 3, "二": 2, "一": 1
   };
 
-  const input = document.getElementById("betInput").value.trim().split(/\n/);
+  const input = document.getElementById("note").value.trim().split(/\n/);
   const draw = document.getElementById("drawInput").value.trim().replace(/[.\n,]/g, ' ');
   const drawNums = draw.split(/\s+/).map(x => x.padStart(2, '0')).filter(x => /^\d{2}$/.test(x));
   const drawSet = new Set(drawNums);
@@ -766,6 +752,31 @@ function sortBetLines() {
   });
   betInput.value = sortedLines.join("\n");
   alert("每注號碼已排序完成");
+}
+</script><script>
+function sortNoteLines() {
+  const note = document.getElementById("note");
+  if (!note) return;
+  const lines = note.value.trim().split(/\n+/);
+  const sortedLines = lines.map(line => {
+    const tokens = line.trim().split(/\s+/);
+    const numbers = [];
+    let suffixIndex = tokens.length;
+    for (let i = 0; i < tokens.length; i++) {
+      const t = tokens[i];
+      if (/^\d{1,2}$/.test(t) && parseInt(t) >= 1 && parseInt(t) <= 39) {
+        numbers.push(t.padStart(2, '0'));
+      } else {
+        suffixIndex = i;
+        break;
+      }
+    }
+    const sorted = numbers.sort((a, b) => parseInt(a) - parseInt(b));
+    const suffix = tokens.slice(suffixIndex).join(" ");
+    return sorted.join(" ") + (suffix ? " " + suffix : "");
+  });
+  note.value = sortedLines.join("\n");
+  alert("備註區每注號碼已排序完成");
 }
 </script></body>
 </html>
