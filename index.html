@@ -996,7 +996,7 @@ function toggleMartin(day, index) {
 }
 
 }
-window.addEventListener("load", () => { loadMartinData(); renderMartinCalendar(); });
+
 </script>
 
 <script>
@@ -1023,3 +1023,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
 </body>
 </html>
+
+<script>
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadMartinData();
+  applyMartin();
+  renderMartinCalendar();
+});
+
+</script>
