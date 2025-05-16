@@ -84,7 +84,25 @@
       border-radius: 8px;
       font-size: 16px;
     }
-  </style>
+  
+.dual-cell {
+  border: 1px solid #888;
+  padding: 4px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 12px;
+}
+.dual-cell div {
+  padding: 5px 0;
+  margin: 1px 0;
+  border-radius: 3px;
+}
+.cell-0 { background: #eee; }
+.cell-1 { background: black; color: lightgreen; }
+.cell-2 { background: red; color: white; }
+.cell-3 { background: #0066cc; color: white; }
+.cell-4 { background: #ff9900; color: black; }
+</style>
 <script>
 function sortBetLines() {
   const betInput = document.getElementById("betInput");
@@ -781,6 +799,14 @@ function sortNoteLines() {
 </script><h3>回補型馬丁月曆模擬</h3>
 <div id="calendarSection">
 <label for="martinBase">起始投注金額：</label>
+<div style="margin-top: 10px;">
+<strong>狀態說明：</strong><br/>
+<span style="background:black;color:lightgreen;padding:2px 8px;margin-right:5px;">未中</span>
+<span style="background:red;color:white;padding:2px 8px;margin-right:5px;">中獎</span>
+<span style="background:#0066cc;color:white;padding:2px 8px;margin-right:5px;">第二次未中</span>
+<span style="background:#ff9900;color:black;padding:2px 8px;margin-right:5px;">第二次中獎</span>
+</div>
+
 <input id="martinBase" type="number" value="1000"/>
 <button onclick="applyMartin()">套用</button>
 <button onclick="resetMartin()">清除月曆</button>
@@ -789,71 +815,75 @@ function sortNoteLines() {
 <div id="martinDetail" style="margin-top:10px;white-space:pre-wrap;font-size:15px;"></div>
 </div>
 <script>
-let martinState = [];
-let martinBase = 1000;
+let martinState = Array.from({length: 30}, () => [0, 0]);
 const martinRate = 6.1;
-const fixedInvest = [1000,1000,1000,1000,1000,1000,1200,1500,1800,2100,2500,3000,3600,4300,5100,6100,7300,8800,10500,12600];
+let martinBase = 1000;
+let fixedInvest = [];
 
 function applyMartin() {
   martinBase = parseInt(document.getElementById("martinBase").value) || 1000;
-
-  // 根據起始金額重建投注金額陣列
-  fixedInvest.length = 0;
   const multipliers = [1,1,1,1,1,1,1.2,1.5,1.8,2.1,2.5,3,3.6,4.3,5.1,6.1,7.3,8.8,10.5,12.6];
-  multipliers.forEach(m => fixedInvest.push(Math.round(martinBase * m)));
+  fixedInvest = multipliers.map(m => Math.round(martinBase * m));
+  renderMartinCalendar();
+}
 
-  renderMartinCalendar();
-}
 function resetMartin() {
-  martinState = [];
+  martinState = Array.from({length: 30}, () => [0, 0]);
   renderMartinCalendar();
 }
-function toggleMartin(day) {
-  if (!martinState[day]) martinState[day] = 0;
-  martinState[day] = (martinState[day] + 1) % 3;
+
+function toggleMartin(day, index) {
+  martinState[day][index] = (martinState[day][index] + 1) % 3;
   renderMartinCalendar();
 }
+
 function renderMartinCalendar() {
   const cal = document.getElementById("martinCalendar");
   const summary = document.getElementById("martinSummary");
   const detail = document.getElementById("martinDetail");
   cal.innerHTML = "";
   let totalGain = 0;
-  let totalLoss = 0;
   let accLoss = 0;
   let failStreak = 0;
   detail.innerText = "";
+
   for (let i = 0; i < 30; i++) {
     const cell = document.createElement("div");
-    cell.textContent = i + 1;
-    cell.style.border = "1px solid #888";
-    cell.style.textAlign = "center";
-    cell.style.padding = "8px";
-    cell.style.cursor = "pointer";
-    let state = martinState[i] || 0;
-    let invest = fixedInvest[failStreak] || fixedInvest[fixedInvest.length - 1];
-    if (state === 1) {
-      cell.style.background = "black";
-      cell.style.color = "lightgreen";
-      accLoss += invest;
-      totalLoss += invest;
-      detail.innerText += `第 ${i+1} 日：未中，投注 ${invest}，累積 ${accLoss} 元
+    cell.className = "dual-cell";
+    const label = document.createElement("div");
+    label.textContent = `第${i+1}日`;
+    cell.appendChild(label);
+
+    for (let j = 0; j < 2; j++) {
+      const btn = document.createElement("div");
+      const state = martinState[i][j];
+      btn.className = "cell-" + state;
+      btn.textContent = j === 0 ? "第一次" : "第二次";
+
+      const invest = fixedInvest[failStreak] || fixedInvest[fixedInvest.length - 1];
+
+      if (state === 1) {
+        accLoss += invest;
+        detail.innerText += `第 ${i+1} 日：第${j+1}次未中，投注 ${invest}，累積 ${accLoss} 元
 `;
-      failStreak++;
-    } else if (state === 2) {
-      cell.style.background = "red";
-      cell.style.color = "white";
-      let prize = Math.floor(invest * martinRate);
-      let profit = prize - invest - accLoss;
-      totalGain += profit;
-      detail.innerText += `第 ${i+1} 日：中獎，投注 ${invest}，實際淨利 ${profit} 元
+        failStreak++;
+      } else if (state === 2) {
+        const prize = Math.floor(invest * martinRate);
+        const profit = prize - invest - accLoss;
+        totalGain += profit;
+        detail.innerText += `第 ${i+1} 日：第${j+1}次中獎，投注 ${invest}，實際淨利 ${profit} 元
 `;
-      accLoss = 0;
-      failStreak = 0;
+        accLoss = 0;
+        failStreak = 0;
+      }
+
+      btn.onclick = () => toggleMartin(i, j);
+      cell.appendChild(btn);
     }
-    cell.onclick = () => toggleMartin(i);
+
     cal.appendChild(cell);
   }
+
   summary.innerText = `本月總獲利：${totalGain} 元
 累計未中投注金額：${accLoss} 元`;
 }
