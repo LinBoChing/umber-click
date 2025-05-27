@@ -815,7 +815,7 @@ function sortNoteLines() {
 <div id="martinDetail" style="margin-top:10px;white-space:pre-wrap;font-size:15px;"></div>
 </div>
 <script>
-let martinState = Array.from({length: 30}, () => [0, 0]);
+let martinState = Array.from({length: 31}, () => [0, 0]);
 const martinRate = 6.1;
 let martinBase = 1000;
 let fixedInvest = [];
@@ -831,7 +831,7 @@ function applyMartin() {
 
 
 function resetMartin() {
-  martinState = Array.from({length: 30}, () => [0, 0]);
+  martinState = Array.from({length: 31}, () => [0, 0]);
   renderMartinCalendar();
 }
 
@@ -851,7 +851,7 @@ function renderMartinCalendar() {
   let failStreak = 0;
   detail.innerText = "";
 
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 31; i++) {
     const cell = document.createElement("div");
     cell.className = "dual-cell";
     const label = document.createElement("div");
@@ -906,7 +906,7 @@ function loadMartinData() {
     martinBase = parseInt(base);
   }
 
-  if (Array.isArray(state) && state.length === 30) {
+  if (Array.isArray(state) && state.length === 31) {
     martinState = state;
   }
 
@@ -925,7 +925,7 @@ function applyMartin() {
 
 
 function resetMartin() {
-  martinState = Array.from({length: 30}, () => [0, 0]);
+  martinState = Array.from({length: 31}, () => [0, 0]);
   saveMartinData();
   renderMartinCalendar();
 }
@@ -965,7 +965,7 @@ function loadMartinData() {
     martinBase = parseInt(base);
   }
 
-  if (Array.isArray(state) && state.length === 30) {
+  if (Array.isArray(state) && state.length === 31) {
     martinState = state;
   }
 
@@ -984,7 +984,7 @@ function applyMartin() {
 
 
 function resetMartin() {
-  martinState = Array.from({length: 30}, () => [0, 0]);
+  martinState = Array.from({length: 31}, () => [0, 0]);
   saveMartinData();
   renderMartinCalendar();
 }
