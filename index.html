@@ -848,25 +848,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 <script>
-let martinState;
-try {
-  const saved = JSON.parse(localStorage.getItem("martinState") || "null");
-  if (Array.isArray(saved) && saved.length === 31) {
-    martinState = saved.map(row => row.map(cell => {
-      if (!cell) return {state: 0, mode: 5, bet: 1000};
-      if (typeof cell.mode !== "number") cell.mode = 5;
-      if (typeof cell.bet !== "number") cell.bet = 1000;
-      return cell;
-    }));
-  } else {
-    throw "invalid";
-  }
-} catch {
-  martinState = Array.from({ length: 31 }, () => [
-    { state: 0, mode: 5, bet: 1000 },
-    { state: 0, mode: 5, bet: 1000 }
-  ]);
-} Array.from({length: 31}, () => [{state:0, mode:5, bet:1000}, {state:0, mode:5, bet:1000}]);
+let martinState = Array.from({length: 31}, () => [{state:0, mode:5, bet:1000}, {state:0, mode:5, bet:1000}]);
 const noDrawPrizeTable = {
   5: 1.9, 6: 2.2, 7: 2.58, 8: 3.0, 9: 3.6, 10: 4.2, 11: 5.05, 12: 6.1
 };
@@ -989,4 +971,41 @@ document.addEventListener("DOMContentLoaded", () => {
   renderMartinCalendar();
 });
 
+</script><script>
+if (typeof martinState === "undefined") {
+  let saved = null;
+  try {
+    saved = JSON.parse(localStorage.getItem("martinState") || "null");
+  } catch {}
+  if (Array.isArray(saved) && saved.length === 31) {
+    martinState = saved.map(row => row.map(cell => {
+      if (!cell) return {state: 0, mode: 5, bet: 1000};
+      if (typeof cell.mode !== "number") cell.mode = 5;
+      if (typeof cell.bet !== "number") cell.bet = 1000;
+      return cell;
+    }));
+  } else {
+    martinState = Array.from({ length: 31 }, () => [
+      { state: 0, mode: 5, bet: 1000 },
+      { state: 0, mode: 5, bet: 1000 }
+    ]);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (typeof renderMartinCalendar === "function") {
+    renderMartinCalendar();
+    const clearBtn = document.getElementById("clearMartin");
+    if (clearBtn) {
+      clearBtn.addEventListener("click", () => {
+        martinState = Array.from({ length: 31 }, () => [
+          { state: 0, mode: 5, bet: 1000 },
+          { state: 0, mode: 5, bet: 1000 }
+        ]);
+        localStorage.setItem("martinState", JSON.stringify(martinState));
+        renderMartinCalendar();
+      });
+    }
+  }
+});
 </script>
