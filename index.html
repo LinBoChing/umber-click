@@ -800,205 +800,32 @@ function sortNoteLines() {
 <div id="calendarSection">
 <label for="martinBase">起始投注金額：</label>
 <div style="margin-top: 10px;">
-<strong>狀態說明：</strong><br/>
+<br/>
 <span style="background:black;color:lightgreen;padding:2px 8px;margin-right:5px;">未中</span>
 <span style="background:red;color:white;padding:2px 8px;margin-right:5px;">中獎</span>
 <span style="background:#0066cc;color:white;padding:2px 8px;margin-right:5px;">第二次未中</span>
 <span style="background:#ff9900;color:black;padding:2px 8px;margin-right:5px;">第二次中獎</span>
 </div>
-
 <input id="martinBase" type="number" value="1000"/>
+<div style="margin-top: 10px;">
+<label for="noDrawCount">選擇不出組數：</label>
+<select id="noDrawCount">
+<option value="5">5 不出</option>
+<option value="6">6 不出</option>
+<option value="7">7 不出</option>
+<option value="8">8 不出</option>
+<option value="9">9 不出</option>
+<option value="10">10 不出</option>
+<option value="11">11 不出</option>
+<option value="12">12 不出</option>
+</select>
+</div>
 <button onclick="applyMartin()">套用</button>
 <button onclick="resetMartin()">清除月曆</button>
-<div id="martinCalendar" style="margin-top:10px;display:grid;grid-template-columns:repeat(7,1fr);gap:5px;"></div>
+<button id="clearMartin">清除月曆</button><div id="martinCalendar" style="margin-top:10px;display:grid;grid-template-columns:repeat(7,1fr);gap:5px;"></div>
 <div id="martinSummary" style="margin-top:10px;font-weight:bold;"></div>
 <div id="martinDetail" style="margin-top:10px;white-space:pre-wrap;font-size:15px;"></div>
 </div>
-<script>
-let martinState = Array.from({length: 31}, () => [0, 0]);
-const martinRate = 6.1;
-let martinBase = 1000;
-let fixedInvest = [];
-
-
-function applyMartin() {
-  martinBase = parseInt(document.getElementById("martinBase").value) || 1000;
-  const multipliers = [1,1,1,1,1,1,1.2,1.5,1.8,2.1,2.5,3,3.6,4.3,5.1,6.1,7.3,8.8,10.5,12.6];
-  fixedInvest = multipliers.map(m => Math.round(martinBase * m));
-  saveMartinData();
-  renderMartinCalendar();
-}
-
-
-function resetMartin() {
-  martinState = Array.from({length: 31}, () => [0, 0]);
-  renderMartinCalendar();
-}
-
-function toggleMartin(day, index) {
-  saveMartinData();
-  martinState[day][index] = (martinState[day][index] + 1) % 3;
-  renderMartinCalendar();
-}
-
-function renderMartinCalendar() {
-  const cal = document.getElementById("martinCalendar");
-  const summary = document.getElementById("martinSummary");
-  const detail = document.getElementById("martinDetail");
-  cal.innerHTML = "";
-  let totalGain = 0;
-  let accLoss = 0;
-  let failStreak = 0;
-  detail.innerText = "";
-
-  for (let i = 0; i < 31; i++) {
-    const cell = document.createElement("div");
-    cell.className = "dual-cell";
-    const label = document.createElement("div");
-    label.textContent = `第${i+1}日`;
-    cell.appendChild(label);
-
-    for (let j = 0; j < 2; j++) {
-      const btn = document.createElement("div");
-      const state = martinState[i][j];
-      btn.className = "cell-" + state;
-      btn.textContent = j === 0 ? "第一次" : "第二次";
-
-      const invest = fixedInvest[failStreak] || fixedInvest[fixedInvest.length - 1];
-
-      if (state === 1) {
-        accLoss += invest;
-        detail.innerText += `第 ${i+1} 日：第${j+1}次未中，投注 ${invest}，累積 ${accLoss} 元
-`;
-        failStreak++;
-      } else if (state === 2) {
-        const prize = Math.floor(invest * martinRate);
-        const profit = prize - invest - accLoss;
-        totalGain += profit;
-        detail.innerText += `第 ${i+1} 日：第${j+1}次中獎，投注 ${invest}，實際淨利 ${profit} 元
-`;
-        accLoss = 0;
-        failStreak = 0;
-      }
-
-      btn.onclick = () => toggleMartin(i, j);
-      cell.appendChild(btn);
-    }
-
-    cal.appendChild(cell);
-  }
-
-  summary.innerText = `本月總獲利：${totalGain} 元
-累計未中投注金額：${accLoss} 元`;
-}
-
-function saveMartinData() {
-  localStorage.setItem("martinBase", document.getElementById("martinBase").value);
-  localStorage.setItem("martinState", JSON.stringify(martinState));
-}
-
-function loadMartinData() {
-  const base = localStorage.getItem("martinBase");
-  const state = JSON.parse(localStorage.getItem("martinState") || "[]");
-
-  if (base) {
-    document.getElementById("martinBase").value = base;
-    martinBase = parseInt(base);
-  }
-
-  if (Array.isArray(state) && state.length === 31) {
-    martinState = state;
-  }
-
-  const multipliers = [1,1,1,1,1,1,1.2,1.5,1.8,2.1,2.5,3,3.6,4.3,5.1,6.1,7.3,8.8,10.5,12.6];
-  fixedInvest = multipliers.map(m => Math.round(martinBase * m));
-}
-
-
-function applyMartin() {
-  martinBase = parseInt(document.getElementById("martinBase").value) || 1000;
-  const multipliers = [1,1,1,1,1,1,1.2,1.5,1.8,2.1,2.5,3,3.6,4.3,5.1,6.1,7.3,8.8,10.5,12.6];
-  fixedInvest = multipliers.map(m => Math.round(martinBase * m));
-  saveMartinData();
-  renderMartinCalendar();
-}
-
-
-function resetMartin() {
-  martinState = Array.from({length: 31}, () => [0, 0]);
-  saveMartinData();
-  renderMartinCalendar();
-}
-
-function toggleMartin(day, index) {
-  martinState[day][index] = (martinState[day][index] + 1) % 3;
-  saveMartinData();
-  renderMartinCalendar();
-}
-
-function saveMartinData() {
-  localStorage.setItem("martinState", JSON.stringify(martinState));
-  localStorage.setItem("martinBase", document.getElementById("martinBase").value);
-}
-function loadMartinData() {
-  const savedState = JSON.parse(localStorage.getItem("martinState") || "[]");
-  const savedBase = localStorage.getItem("martinBase");
-  if (Array.isArray(savedState) && savedState.length === 30) {
-    martinState = savedState;
-  }
-  if (savedBase !== null) {
-    document.getElementById("martinBase").value = savedBase;
-    martinBase = parseInt(savedBase);
-  }
-  
-function saveMartinData() {
-  localStorage.setItem("martinBase", document.getElementById("martinBase").value);
-  localStorage.setItem("martinState", JSON.stringify(martinState));
-}
-
-function loadMartinData() {
-  const base = localStorage.getItem("martinBase");
-  const state = JSON.parse(localStorage.getItem("martinState") || "[]");
-
-  if (base) {
-    document.getElementById("martinBase").value = base;
-    martinBase = parseInt(base);
-  }
-
-  if (Array.isArray(state) && state.length === 31) {
-    martinState = state;
-  }
-
-  const multipliers = [1,1,1,1,1,1,1.2,1.5,1.8,2.1,2.5,3,3.6,4.3,5.1,6.1,7.3,8.8,10.5,12.6];
-  fixedInvest = multipliers.map(m => Math.round(martinBase * m));
-}
-
-
-function applyMartin() {
-  martinBase = parseInt(document.getElementById("martinBase").value) || 1000;
-  const multipliers = [1,1,1,1,1,1,1.2,1.5,1.8,2.1,2.5,3,3.6,4.3,5.1,6.1,7.3,8.8,10.5,12.6];
-  fixedInvest = multipliers.map(m => Math.round(martinBase * m));
-  saveMartinData();
-  renderMartinCalendar();
-}
-
-
-function resetMartin() {
-  martinState = Array.from({length: 31}, () => [0, 0]);
-  saveMartinData();
-  renderMartinCalendar();
-}
-
-function toggleMartin(day, index) {
-  martinState[day][index] = (martinState[day][index] + 1) % 3;
-  saveMartinData();
-  renderMartinCalendar();
-}
-
-}
-
-</script>
-
 <script>
 function saveDrawInput() {
   const input = document.getElementById("drawInput");
@@ -1020,10 +847,118 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 </script>
+<script>
+let martinState = Array.from({length: 31}, () => [{state:0, mode:5, bet:1000}, {state:0, mode:5, bet:1000}]);
+const noDrawPrizeTable = {
+  5: 1.9, 6: 2.2, 7: 2.58, 8: 3.0, 9: 3.6, 10: 4.2, 11: 5.05, 12: 6.1
+};
 
-</body>
+function renderMartinCalendar() {
+  const cal = document.getElementById("martinCalendar");
+  const summary = document.getElementById("martinSummary");
+  const detail = document.getElementById("martinDetail");
+  cal.innerHTML = "";
+  let totalGain = 0;
+  let accLoss = 0;
+  detail.innerText = "";
+
+  for (let i = 0; i < 31; i++) {
+    const row = document.createElement("div");
+    row.className = "dual-cell";
+    const label = document.createElement("div");
+    label.textContent = `第${i + 1}日`;
+    row.appendChild(label);
+
+    for (let j = 0; j < 2; j++) {
+      const entry = martinState[i][j];
+      if (!entry) entry = {state:0, mode:5, bet:1000}; martinState[i][j] = entry;
+      const btn = document.createElement("div");
+      btn.className = "cell-" + martinState[i][j].state;
+      btn.textContent = j === 0 ? "第一次" : "第二次";
+      btn.addEventListener("click", (e) => {
+        toggleMartin(i, j); openSettingDialog(i, j);
+      });
+      row.appendChild(btn);
+    }
+
+    cal.appendChild(row);
+  }
+
+  for (let i = 0; i < 31; i++) {
+    for (let j = 0; j < 2; j++) {
+      const entry = martinState[i][j];
+      if (!entry) continue;
+      const { state, mode, bet } = entry;
+      if (state === 1) {
+        accLoss += bet;
+        detail.innerText += `第${i+1}日：第${j+1}次未中，玩法${mode}不出，投注${bet}元，累積 ${accLoss} 元\n`;
+      } else if (state === 2) {
+        const prize = Math.floor(bet * (noDrawPrizeTable[mode] || 0));
+        const profit = prize - bet - accLoss;
+        totalGain += profit;
+        detail.innerText += `第${i+1}日：第${j+1}次中獎，玩法${mode}不出，投注${bet}元，獎金${prize}元，淨利${profit}元\n`;
+        accLoss = 0;
+      }
+    }
+  }
+
+  summary.innerText = `本月總獲利：${totalGain} 元\n累計未中投注金額：${accLoss} 元`;
+}
+
+function toggleMartin(day, index) {
+  let item = martinState[day][index];
+  item.state = (item.state + 1) % 3;
+  saveMartinData();
+  renderMartinCalendar();
+}
+
+function openSettingDialog(day, index) {
+  const current = martinState[day][index];
+  const input = prompt("請輸入玩法(5~12)與金額，例如：10,2000", current.mode + "," + current.bet);
+  if (!input) return;
+  const [m, b] = input.split(",").map(s => parseInt(s.trim()));
+  if ([5,6,7,8,9,10,11,12].includes(m) && b > 0) {
+    martinState[day][index].mode = m;
+    martinState[day][index].bet = b;
+    saveMartinData();
+    renderMartinCalendar();
+  } else {
+    alert("輸入格式錯誤，請用 玩法,金額 例如 10,3000");
+  }
+}
+
+function saveMartinData() {
+  localStorage.setItem("martinState", JSON.stringify(martinState));
+}
+
+function loadMartinData() {
+  const saved = JSON.parse(localStorage.getItem("martinState") || "null");
+  if (Array.isArray(saved)) {
+    martinState = saved.map(row => row.map(cell => {
+      if (!cell) return {state:0, mode:5, bet:1000};
+      if (typeof cell.mode !== "number") cell.mode = 5;
+      if (typeof cell.bet !== "number") cell.bet = 1000;
+      return cell;
+    }));
+  }
+}
+
+function clearMartinData() {
+  martinState = Array.from({length: 31}, () => [{state:0, mode:5, bet:1000}, {state:0, mode:5, bet:1000}]);
+  saveMartinData();
+  renderMartinCalendar();
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  loadMartinData();
+  renderMartinCalendar();
+  const clearBtn = document.getElementById("clearMartin");
+  if (clearBtn) {
+    clearBtn.addEventListener("click", clearMartinData);
+  }
+});
+</script></body>
 </html>
-
 <script>
 
 document.addEventListener("DOMContentLoaded", () => {
