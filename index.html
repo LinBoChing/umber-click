@@ -588,4 +588,405 @@ function checkWinning() {
       <td>${hitStars}</td>
       <td>${Math.round(prize)}元</td>
     </tr>`;
-    row = row.replace("</tr>", '<td><
+    row = row.replace("</tr>", '<td><button onclick="deleteRow(this)">刪除</button></td></tr>');
+document.querySelector("#historyTable tbody").insertAdjacentHTML("afterbegin", row);
+saveHistory();
+  }
+
+}
+
+
+function toggleHistory() {
+  const wrapper = document.getElementById("historyWrapper");
+  wrapper.style.display = wrapper.style.display === "none" ? "block" : "none";
+}
+
+function saveHistory() {
+  const table = document.querySelector("#historyTable tbody");
+  const rows = Array.from(table.children).map(tr => tr.innerHTML);
+  localStorage.setItem("historyRecords", JSON.stringify(rows));
+}
+
+function loadHistory() {
+  const saved = JSON.parse(localStorage.getItem("historyRecords") || "[]");
+  const tbody = document.querySelector("#historyTable tbody");
+  saved.forEach(row => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = row;
+    tbody.appendChild(tr);
+  });
+}
+
+function deleteRow(btn) {
+  const tr = btn.parentNode.parentNode;
+  tr.remove();
+  saveHistory();
+}
+
+function copyComboToHistory() {
+  const content = document.getElementById("comboResult").textContent.trim();
+  if (!content) {
+    alert("目前沒有可寫入的內容");
+    return;
+  }
+  const date = new Date().toLocaleDateString("zh-TW", { month: '2-digit', day: '2-digit' });
+  const row = `<tr><td colspan="8" style="white-space:pre-wrap;"><strong>${date}</strong><br>${content}</td><td><button onclick="deleteRow(this)">刪除</button></td></tr>`;
+  document.querySelector("#historyTable tbody").insertAdjacentHTML("afterbegin", row);
+  saveHistory();
+}
+
+
+function extractUnselectedToNote() {
+  const noteBox = document.getElementById("note");
+  const rawText = document.getElementById("unselected").textContent;
+  const numbers = rawText.replace("尚未選取的號碼：", "").trim().split(/\s+/).filter(x => /^\d{2}$/.test(x));
+  const existing = noteBox.value.split(/\s+/);
+  const unique = numbers.filter(n => !existing.includes(n));
+  if (unique.length > 0) {
+    const sorted = unique.sort((a, b) => parseInt(a) - parseInt(b));
+    noteBox.value += (noteBox.value ? "\n" : "") + sorted.join(" ");
+    saveNote?.();
+  } else {
+    alert("備註區已有相同號碼，未新增重複內容");
+  }
+}
+
+
+function extractGroupSorted(title) {
+  const statsDiv = document.getElementById("stats");
+  const noteBox = document.getElementById("note");
+  const blocks = statsDiv.querySelectorAll(".group-title");
+  for (let block of blocks) {
+    if (block.textContent === title) {
+      const rawText = block.parentElement.textContent;
+      const allNums = [...rawText.matchAll(/\b\d{2}(?=\s|\(|$)/g)].map(m => m[0]);
+      const existing = noteBox.value.split(/\s+/);
+      const filtered = allNums.filter(n => !existing.includes(n));
+      if (filtered.length > 0) {
+        const sorted = filtered.sort((a, b) => parseInt(a) - parseInt(b));
+        noteBox.value += (noteBox.value ? "\n" : "") + sorted.join(" ");
+        saveNote?.();
+      } else {
+        alert("備註區已有相同號碼，未新增重複內容");
+      }
+    }
+  }
+}
+function insertGroupExtractButtons() {
+  const groups = document.querySelectorAll("#stats .group-title");
+  for (let group of groups) {
+    if (!group.nextSibling || group.nextSibling.nodeName !== "BUTTON") {
+      const btn = document.createElement("button");
+      btn.textContent = "提取";
+      btn.style.marginLeft = "10px";
+      btn.onclick = () => extractGroupSorted(group.textContent);
+      group.parentElement.insertBefore(btn, group.nextSibling);
+    }
+  }
+}
+setInterval(insertGroupExtractButtons, 1000);
+
+</script>
+<script>
+function clearBetInput() {
+  const betInput = document.getElementById("betInput");
+  if (betInput) {
+    betInput.value = "";
+    localStorage.removeItem("betInputText");
+  }
+}
+function saveBetInput() {
+  const betInput = document.getElementById("betInput");
+  if (betInput) {
+    localStorage.setItem("betInputText", betInput.value);
+  }
+}
+function loadBetInput() {
+  const saved = localStorage.getItem("betInputText");
+  if (saved) {
+    document.getElementById("betInput").value = saved;
+  }
+}
+window.addEventListener("load", loadBetInput);
+document.addEventListener("DOMContentLoaded", () => {
+  const betInput = document.getElementById("betInput");
+  if (betInput) {
+    betInput.addEventListener("input", saveBetInput);
+  }
+});
+</script><script>
+function copyNoteToBetInput() {
+  const noteText = document.getElementById("note").value.trim();
+  const betInput = document.getElementById("betInput");
+  if (noteText) {
+    betInput.value = noteText;
+    alert("備註內容已貼上到下注識別區");
+  } else {
+    alert("備註區沒有內容");
+  }
+}
+</script><script>
+function saveDrawInput() {
+  const input = document.getElementById("drawInput");
+  if (input) {
+    localStorage.setItem("drawInputText", input.value);
+  }
+}
+function loadDrawInput() {
+  const saved = localStorage.getItem("drawInputText");
+  if (saved) {
+    document.getElementById("drawInput").value = saved;
+  }
+}
+window.addEventListener("load", loadDrawInput);
+document.addEventListener("DOMContentLoaded", () => {
+  const input = document.getElementById("drawInput");
+  if (input) {
+    input.addEventListener("input", saveDrawInput);
+  }
+});
+<script>
+function sortBetLines() {
+  const betInput = document.getElementById("betInput");
+  const lines = betInput.value.trim().split(/\n+/);
+  const sortedLines = lines.map(line => {
+    const tokens = line.trim().split(/\s+/);
+    const numbers = [];
+    let suffixIndex = tokens.length;
+
+    for (let i = 0; i < tokens.length; i++) {
+      const t = tokens[i];
+      if (/^\d{1,2}$/.test(t) && parseInt(t) >= 1 && parseInt(t) <= 39) {
+        numbers.push(t.padStart(2, '0'));
+      } else {
+        suffixIndex = i;
+        break;
+      }
+    }
+
+    const sorted = numbers.sort((a, b) => parseInt(a) - parseInt(b));
+    const suffix = tokens.slice(suffixIndex).join(" ");
+    return sorted.join(" ") + (suffix ? " " + suffix : "");
+  });
+  betInput.value = sortedLines.join("\n");
+  alert("每注號碼已排序完成");
+}
+</script><script>
+function sortNoteLines() {
+  const note = document.getElementById("note");
+  if (!note) return;
+  const lines = note.value.trim().split(/\n+/);
+  const sortedLines = lines.map(line => {
+    const tokens = line.trim().split(/\s+/);
+    const numbers = [];
+    let suffixIndex = tokens.length;
+    for (let i = 0; i < tokens.length; i++) {
+      const t = tokens[i];
+      if (/^\d{1,2}$/.test(t) && parseInt(t) >= 1 && parseInt(t) <= 39) {
+        numbers.push(t.padStart(2, '0'));
+      } else {
+        suffixIndex = i;
+        break;
+      }
+    }
+    const sorted = numbers.sort((a, b) => parseInt(a) - parseInt(b));
+    const suffix = tokens.slice(suffixIndex).join(" ");
+    return sorted.join(" ") + (suffix ? " " + suffix : "");
+  });
+  note.value = sortedLines.join("\n");
+  alert("備註區每注號碼已排序完成");
+}
+</script><h3>回補型馬丁月曆模擬</h3>
+<div id="calendarSection">
+<label for="martinBase">起始投注金額：</label>
+<div style="margin-top: 10px;">
+<br/>
+<span style="background:black;color:lightgreen;padding:2px 8px;margin-right:5px;">未中</span>
+<span style="background:red;color:white;padding:2px 8px;margin-right:5px;">中獎</span>
+<span style="background:#0066cc;color:white;padding:2px 8px;margin-right:5px;">第二次未中</span>
+<span style="background:#ff9900;color:black;padding:2px 8px;margin-right:5px;">第二次中獎</span>
+</div>
+<input id="martinBase" type="number" value="1000"/>
+<div style="margin-top: 10px;">
+<label for="noDrawCount">選擇不出組數：</label>
+<select id="noDrawCount">
+<option value="5">5 不出</option>
+<option value="6">6 不出</option>
+<option value="7">7 不出</option>
+<option value="8">8 不出</option>
+<option value="9">9 不出</option>
+<option value="10">10 不出</option>
+<option value="11">11 不出</option>
+<option value="12">12 不出</option>
+</select>
+</div>
+<button onclick="applyMartin()">套用</button>
+<button onclick="resetMartin()">清除月曆</button>
+<button id="clearMartin">清除月曆</button><div id="martinCalendar" style="margin-top:10px;display:grid;grid-template-columns:repeat(7,1fr);gap:5px;"></div>
+<div id="martinSummary" style="margin-top:10px;font-weight:bold;"></div>
+<div id="martinDetail" style="margin-top:10px;white-space:pre-wrap;font-size:15px;"></div>
+</div>
+<script>
+function saveDrawInput() {
+  const input = document.getElementById("drawInput");
+  if (input) {
+    localStorage.setItem("drawInputText", input.value);
+  }
+}
+function loadDrawInput() {
+  const saved = localStorage.getItem("drawInputText");
+  if (saved) {
+    document.getElementById("drawInput").value = saved;
+  }
+}
+window.addEventListener("load", loadDrawInput);
+document.addEventListener("DOMContentLoaded", () => {
+  const input = document.getElementById("drawInput");
+  if (input) {
+    input.addEventListener("input", saveDrawInput);
+  }
+});
+</script>
+<script>
+let martinState;
+try {
+  const saved = JSON.parse(localStorage.getItem("martinState") || "null");
+  if (Array.isArray(saved) && saved.length === 31) {
+    martinState = saved.map(row => row.map(cell => {
+      if (!cell) return {state: 0, mode: 5, bet: 1000};
+      if (typeof cell.mode !== "number") cell.mode = 5;
+      if (typeof cell.bet !== "number") cell.bet = 1000;
+      return cell;
+    }));
+  } else {
+    throw "invalid";
+  }
+} catch {
+  martinState = Array.from({ length: 31 }, () => [
+    { state: 0, mode: 5, bet: 1000 },
+    { state: 0, mode: 5, bet: 1000 }
+  ]);
+} Array.from({length: 31}, () => [{state:0, mode:5, bet:1000}, {state:0, mode:5, bet:1000}]);
+const noDrawPrizeTable = {
+  5: 1.9, 6: 2.2, 7: 2.58, 8: 3.0, 9: 3.6, 10: 4.2, 11: 5.05, 12: 6.1
+};
+
+function renderMartinCalendar() {
+  const cal = document.getElementById("martinCalendar");
+  const summary = document.getElementById("martinSummary");
+  const detail = document.getElementById("martinDetail");
+  cal.innerHTML = "";
+  let totalGain = 0;
+  let accLoss = 0;
+  detail.innerText = "";
+
+  for (let i = 0; i < 31; i++) {
+    const row = document.createElement("div");
+    row.className = "dual-cell";
+    const label = document.createElement("div");
+    label.textContent = `第${i + 1}日`;
+    row.appendChild(label);
+
+    for (let j = 0; j < 2; j++) {
+      const entry = martinState[i][j];
+      if (!entry) entry = {state:0, mode:5, bet:1000}; martinState[i][j] = entry;
+      const btn = document.createElement("div");
+      btn.className = "cell-" + martinState[i][j].state;
+      btn.textContent = j === 0 ? "第一次" : "第二次";
+      btn.addEventListener("click", (e) => {
+        toggleMartin(i, j); openSettingDialog(i, j);
+      });
+      row.appendChild(btn);
+    }
+
+    cal.appendChild(row);
+  }
+
+  for (let i = 0; i < 31; i++) {
+    for (let j = 0; j < 2; j++) {
+      const entry = martinState[i][j];
+      if (!entry) continue;
+      const { state, mode, bet } = entry;
+      if (state === 1) {
+        accLoss += bet;
+        detail.innerText += `第${i+1}日：第${j+1}次未中，玩法${mode}不出，投注${bet}元，累積 ${accLoss} 元\n`;
+      } else if (state === 2) {
+        const prize = Math.floor(bet * (noDrawPrizeTable[mode] || 0));
+        const profit = prize - bet - accLoss;
+        totalGain += profit;
+        detail.innerText += `第${i+1}日：第${j+1}次中獎，玩法${mode}不出，投注${bet}元，獎金${prize}元，淨利${profit}元\n`;
+        accLoss = 0;
+      }
+    }
+  }
+
+  summary.innerText = `本月總獲利：${totalGain} 元\n累計未中投注金額：${accLoss} 元`;
+}
+
+function toggleMartin(day, index) {
+  let item = martinState[day][index];
+  item.state = (item.state + 1) % 3;
+  saveMartinData();
+  renderMartinCalendar();
+}
+
+function openSettingDialog(day, index) {
+  let current = martinState[day][index];
+  if (!current || typeof current.mode !== "number" || typeof current.bet !== "number") {
+    martinState[day][index] = {state: 0, mode: 5, bet: 1000};
+    current = martinState[day][index];
+  }
+  const input = prompt("請輸入玩法(5~12)與金額，例如：10,2000", current.mode + "," + current.bet);
+  if (!input) return;
+  const [m, b] = input.split(",").map(s => parseInt(s.trim()));
+  if ([5,6,7,8,9,10,11,12].includes(m) && b > 0) {
+    martinState[day][index].mode = m;
+    martinState[day][index].bet = b;
+    saveMartinData();
+    renderMartinCalendar();
+  } else {
+    alert("輸入格式錯誤，請用 玩法,金額 例如 10,3000");
+  }
+}
+
+function saveMartinData() {
+  localStorage.setItem("martinState", JSON.stringify(martinState));
+}
+
+function loadMartinData() {
+  const saved = JSON.parse(localStorage.getItem("martinState") || "null");
+  if (Array.isArray(saved)) {
+    martinState = saved.map(row => row.map(cell => {
+      if (!cell) return {state:0, mode:5, bet:1000};
+      if (typeof cell.mode !== "number") cell.mode = 5;
+      if (typeof cell.bet !== "number") cell.bet = 1000;
+      return cell;
+    }));
+  }
+}
+
+function clearMartinData() {
+  martinState = Array.from({length: 31}, () => [{state:0, mode:5, bet:1000}, {state:0, mode:5, bet:1000}]);
+  saveMartinData();
+  renderMartinCalendar();
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  loadMartinData();
+  renderMartinCalendar();
+  const clearBtn = document.getElementById("clearMartin");
+  if (clearBtn) {
+    clearBtn.addEventListener("click", clearMartinData);
+  }
+});
+</script></body>
+</html>
+<script>
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadMartinData();
+  applyMartin();
+  renderMartinCalendar();
+});
+
+</script>
