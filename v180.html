@@ -140,7 +140,7 @@ function sortBetLines() {
 <div style="margin-top: 20px; text-align: center;">
 <label for="numberInput"><strong>快速貼上號碼（可使用空格、逗號、點號分隔）：</strong></label><br/>
 <textarea id="numberInput" rows="3" style="width: 100%; max-width: 400px; margin-top: 5px;"></textarea><br/>
-<button onclick="pasteFromClipboard()">貼上剪貼簿</button>
+<button onclick="safePasteToInput()">貼上剪貼簿</button>
 <button onclick="clearInput()">清除內容</button>
 <button onclick="applyNumbers()">套用號碼</button>
 </div>
@@ -961,7 +961,19 @@ document.addEventListener("DOMContentLoaded", function() {
     clearBtn.addEventListener("click", clearMartinData);
   }
 });
-</script></body>
+</script>
+<script>
+async function safePasteToInput() {
+  try {
+    const text = await navigator.clipboard.readText();
+    document.getElementById("numberInput").value = text;
+  } catch (err) {
+    alert("❗ 無法貼上，請確認瀏覽器是否允許讀取剪貼簿");
+  }
+}
+</script>
+
+</body>
 </html>
 <script>
 
