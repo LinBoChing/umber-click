@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"/>
+<title>號碼計數器</title>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+    .number {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      text-align: center;
+      border: 2px solid #aaa;
+      border-radius: 8px;
+      cursor: pointer;
+      background-color: #f0f0f0;
+      user-select: none;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .count-1 { background-color: #3399ff; color: white; }
+    .count-2 { background-color: #33cc33; color: white; }
+    .count-3 { background-color: #ff9933; color: white; }
+    .count-more { background-color: #cc3333; color: white; }
+    .count-4  { background-color: #9966cc; color: white; }
+    .count-5  { background-color: #ff6666; color: white; }
+    .count-6  { background-color: #00cccc; color: white; }
+    .count-7  { background-color: #ffcc00; color: black; }
+    .count-8  { background-color: #cc66ff; color: white; }
+    .count-9  { background-color: #66cc66; color: white; }
+    .count-10 { background-color: #ff6699; color: white; }
+    
+    .group-title {
+      display: inline-block;
+      background-color: #444;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-top: 8px;
+      font-weight: bold;
+    }
+    #controls {
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    #stats, #unselected {
+      margin-top: 20px;
+      white-space: pre-wrap;
+      font-size: 15px;
+    }
+    #note {
+      width: 100%;
+      height: 100px;
+      margin-top: 20px;
+      font-size: 15px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+    }
+    #external-link {
+      margin-top: 20px;
+      text-align: center;
+    }
+    #external-link a {
+      display: inline-block;
+      padding: 10px 20px;
+      background-color: #6666cc;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+  
+.dual-cell {
+  border: 1px solid #888;
+  padding: 4px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 12px;
+}
+.dual-cell div {
+  padding: 5px 0;
+  margin: 1px 0;
+  border-radius: 3px;
+}
+.cell-0 { background: #eee; }
+.cell-1 { background: black; color: lightgreen; }
+.cell-2 { background: red; color: white; }
+.cell-3 { background: #0066cc; color: white; }
+.cell-4 { background: #ff9900; color: black; }
+</style>
+<script>
+function sortBetLines() {
+  const betInput = document.getElementById("betInput");
+  if (!betInput) return;
+  const lines = betInput.value.trim().split(/\n+/);
+  const sortedLines = lines.map(line => {
+    const tokens = line.trim().split(/\s+/);
+    const numbers = [];
+    let suffixIndex = tokens.length;
+    for (let i = 0; i < tokens.length; i++) {
+      const t = tokens[i];
+      if (/^\d{1,2}$/.test(t) && parseInt(t) >= 1 && parseInt(t) <= 39) {
+        numbers.push(t.padStart(2, '0'));
+      } else {
+        suffixIndex = i;
+        break;
+      }
+    }
+    const sorted = numbers.sort((a, b) => parseInt(a) - parseInt(b));
+    const suffix = tokens.slice(suffixIndex).join(" ");
+    return sorted.join(" ") + (suffix ? " " + suffix : "");
+  });
+  betInput.value = sortedLines.join("\n");
+  alert("每注號碼已排序完成");
+}
+</script>
+<link href="manifest.json" rel="manifest"/><meta content="#ffffff" name="theme-color"/></head>
+<body>
+<h2 style="text-align:center;">點選號碼：01~39</h2>
+<div id="controls">
+<button onclick="resetAll()">清除所有記錄</button>
+<button onclick="undoLast()">恢復上一動</button>
+</div>
+<div class="grid" id="numbers"></div>
+<div style="margin-top: 20px; text-align: center;">
+<label for="numberInput"><strong>快速貼上號碼（可使用空格、逗號、點號分隔）：</strong></label><br/>
+<textarea id="numberInput" rows="3" style="width: 100%; max-width: 400px; margin-top: 5px;"></textarea><br/>
+<button onclick="pasteFromClipboard()">貼上剪貼簿</button>
+<button onclick="clearInput()">清除內容</button>
+<button onclick="applyNumbers()">套用號碼</button>
+</div>
+<div id="stats"></div>
+<div id="unselected"></div>
+<div style="margin-top: 10px; text-align: center;">
+<button onclick="extractUnselectedToNote()">提取未選號碼至備註區</button>
+</div>
+<button onclick="clearNote()">清空備註</button><br/>
+<textarea id="note" oninput="saveNote()" placeholder="備註區：可輸入自由內容..."></textarea><div id="relocated-tools" style="margin-top: 10px;"><button onclick="sortNoteLines()">每注號碼排序（由小到大）</button><br/><label>開獎號碼（用逗號分隔）：</label><input id="drawInput" style="width:100%; margin-bottom:10px;" type="text"/><br/><button onclick="analyzeBets()">計算結果</button><div id="betResult" style="white-space: pre-wrap; margin-top: 10px; font-size: 15px;"></div></div>
+<div id="external-link">
+<a href="https://www.lot539.com/lottery/539/lost/desc/mis" rel="noopener noreferrer" target="_blank">
+      查看未開統計（另開分頁）
+    </a>
+</div>
+<hr/>
+<h3>自動對獎區</h3>
+<div>
+<label>投注號碼（用逗號分隔）：</label>
+<input id="myNumbers" style="width:100%; margin-bottom:10px;" type="text"/><br/>
+<input id="drawNumbers" style="width:100%; margin-bottom:10px;" type="text"/><br/>
+<button onclick="checkWinning()">計算中獎結果</button>
+</div>
+<hr/>
+<h3>快速編輯區</h3>
+<div>
+<label>輸入號碼與玩法（範例：08 13 21 兩三四0.01）：</label><br/>
+<textarea id="quickComboInput" rows="2" style="width:100%;"></textarea><br/>
+<button onclick="applyQuickCombo()">帶入並計算</button>
+</div>
+<h3>連碰計算器</h3>
+<div>
+<label>選擇使用的號碼數量（4~20）：</label>
+<input id="comboCount" max="20" min="4" type="number" value="4"/>
+</div>
+<div>
+<label>玩法選擇：</label><br/>
+<label><input checked="" id="star2" type="checkbox"/> 2星</label>
+<label><input checked="" id="star3" type="checkbox"/> 3星</label>
+<label><input checked="" id="star4" type="checkbox"/> 4星</label>
+</div>
+<div>
+<label>投注倍數（可輸入小數）：</label>
+<input id="multiplier" min="0.1" step="0.1" type="number" value="1"/>
+</div>
+<div>
+<button onclick="calculateCombinations()">計算結果</button>
+</div>
+<hr/>
+<div id="comboResult" style="margin-top: 20px; white-space: pre-wrap; font-size: 15px;"></div>
+<!-- comboResult 原位置 -->
+<hr/>
+<script>
+
+function analyzeBets() {
+  const chineseNumMap = {
+    "十二": 12, "十一": 11, "十": 10,
+    "九": 9, "八": 8, "七": 7, "六": 6,
+    "五": 5, "四": 4, "三": 3, "二": 2, "一": 1
+  };
+
+  const input = document.getElementById("note").value.trim().split(/\n/);
+  const draw = document.getElementById("drawInput").value.trim().replace(/[.\n,]/g, ' ');
+  const drawNums = draw.split(/\s+/).map(x => x.padStart(2, '0')).filter(x => /^\d{2}$/.test(x));
+  const drawSet = new Set(drawNums);
+
+  const prizeTable = {
+    5: 1.9, 6: 2.2, 7: 2.58, 8: 3.0,
+    9: 3.6, 10: 4.2, 11: 5.05, 12: 6.1
+  };
+  const starPrize = { 2: 5300, 3: 57000, 4: 750000 };
+
+  function getCombinations(arr, k) {
+    const result = [];
+    const recurse = (start, combo) => {
+      if (combo.length === k) {
+        result.push([...combo]);
+        return;
+      }
+      for (let i = start; i < arr.length; i++) {
+        combo.push(arr[i]);
+        recurse(i + 1, combo);
+        combo.pop();
+      }
+    };
+    recurse(0, []);
+    return result;
+  }
+
+  let result = "【除錯】開獎號碼: [" + drawNums.join(', ') + "]\n\n";
+  let lastNumbers = [];
+
+  for (let i = 0; i < input.length; i++) {
+    const line = input[i].trim();
+    if (!line) continue;
+
+    const zhMatch = line.match(/(十二|十一|十|九|八|七|六|五|四|三|二|一)(?=不出)/);
+    const betMatch = line.match(/(\d+(\.\d+)?)/g);
+    const bet = betMatch ? parseFloat(betMatch[betMatch.length - 1]) : 0;
+
+    const numberMatches = line.match(/\d{1,2}/g);
+    const nums = numberMatches ? numberMatches.map(n => n.padStart(2, '0')).filter(n => parseInt(n) >= 1 && parseInt(n) <= 39) : [];
+
+    if (!line.includes("不出") && !line.includes("兩") && !line.includes("三") && !line.includes("四") && nums.length > 0) {
+      lastNumbers = nums;
+      continue;
+    }
+
+    if (line.includes("不出")) {
+      // 從本行提取號碼，只取國字不出前的數字
+      const splitIndex = line.indexOf("不出");
+      const beforeText = line.substring(0, splitIndex);
+      const pureNums = beforeText.match(/\d{1,2}/g) || [];
+      const targetNumbers = pureNums.map(n => n.padStart(2, '0')).filter(n => parseInt(n) >= 1 && parseInt(n) <= 39);
+      const count = zhMatch ? chineseNumMap[zhMatch[0]] : targetNumbers.length;
+      const hit = targetNumbers.filter(n => drawSet.has(n));
+      const prize = (hit.length === 0 && prizeTable[count]) ? bet * prizeTable[count] : 0;
+      result += `【不出】${targetNumbers.join('.')}（${count}不出${bet}）\n→ 命中 ${hit.length} 支: [${hit.join(', ')}]\n→ ${(hit.length === 0 ? '過關！獎金：' + prize.toFixed(2) : '未過關')}\n\n`;
+      continue;
+    }
+
+    if (line.includes("兩") || line.includes("三") || line.includes("四")) {
+      const stars = [];
+      if (line.includes("兩")) stars.push(2);
+      if (line.includes("三")) stars.push(3);
+      if (line.includes("四")) stars.push(4);
+      const betMatch = line.match(/(兩|三|四)+\s*(\d+\.\d+)/);
+      const bet = betMatch ? parseFloat(betMatch[2]) : 0;
+      let cleanLine = line;
+      if (betMatch) cleanLine = line.replace(betMatch[0], "");
+      const numberMatches = cleanLine.match(/\d{1,2}/g);
+      let nums = numberMatches ? numberMatches.map(n => n.padStart(2, "0")).filter(n => parseInt(n) >= 1 && parseInt(n) <= 39) : [];
+      const targetNumbers = nums.length > 0 ? nums : lastNumbers;
+      const match = targetNumbers.filter(n => drawSet.has(n));
+      let total = 0;
+      let details = "";
+      stars.forEach(star => {
+        const allCombos = getCombinations(targetNumbers, star);
+        const hitCombos = allCombos.filter(group => group.every(n => drawSet.has(n)));
+        const hitCount = hitCombos.length;
+        if (hitCount > 0) {
+          const prize = hitCount * starPrize[star] * bet;
+          total += prize;
+          details += `→ 中獎 ${star}星：${hitCount} 組，${Math.round(prize)} 元\n`;
+        }
+      });
+      const label = stars.map(s => `${s}星`).join("、");
+      result += `【${label}連碰】（${bet}倍）\n→ 命中 ${match.length} 支: [${match.join(", ")}]\n${details}→ 預估獎金：${Math.round(total)}\n\n`;
+    }
+  }
+
+  document.getElementById("betResult").textContent = result;
+}
+
+
+function applyQuickCombo() {
+  const input = document.getElementById("quickComboInput").value.trim();
+  const parts = input.split(/\s+/); // 按空白切開
+  const nums = [];
+
+  // 處理號碼，遇到不是 1~2 位數字就停
+  for (let i = 0; i < parts.length; i++) {
+    if (/^\d{1,2}$/.test(parts[i]) && parseInt(parts[i]) >= 1 && parseInt(parts[i]) <= 39) {
+      nums.push(parts[i].padStart(2, '0'));
+    } else {
+      break;
+    }
+  }
+
+  const restStart = input.indexOf(nums[nums.length - 1]) + 2;
+  const rest = input.slice(restStart);
+  const use2 = rest.includes("兩");
+  const use3 = rest.includes("三");
+  const use4 = rest.includes("四");
+
+  const multiplierMatch = rest.match(/(\d+\.\d+|\d+)/g);
+  const multiplier = multiplierMatch ? parseFloat(multiplierMatch[multiplierMatch.length - 1]) : 1;
+
+  if (nums.length < 4 || nums.length > 20) {
+    alert("請輸入 4 至 20 個號碼");
+    return;
+  }
+
+  document.getElementById("comboCount").value = nums.length;
+  document.getElementById("star2").checked = use2;
+  document.getElementById("star3").checked = use3;
+  document.getElementById("star4").checked = use4;
+  document.getElementById("multiplier").value = multiplier;
+
+  window.myNums = nums.map(n => parseInt(n, 10));
+  calculateCombinations();
+}
+
+</script>
+<div id="comboResult_hidden" style="margin-top: 20px; white-space: pre-wrap; font-size: 15px;"></div>
+<script>
+const container = document.getElementById("numbers");
+const statsDiv = document.getElementById("stats");
+const unselectedDiv = document.getElementById("unselected");
+const noteField = document.getElementById("note");
+const clickCounts = {};
+const historyStack = [];
+
+function updateStats() {
+  let groups = {};
+  Object.entries(clickCounts).forEach(([num, count]) => {
+    if (count > 0) {
+      if (!groups[count]) groups[count] = [];
+      groups[count].push(num);
+    }
+  });
+  statsDiv.innerHTML = "";
+  Object.keys(groups).sort((a,b)=>a-b).forEach(count => {
+    const div = document.createElement("div");
+    div.innerHTML = `<span class='group-title'>${count}次</span> ${groups[count].join(" ")}`;
+    statsDiv.appendChild(div);
+  });
+  let unselected = [];
+  for (let i = 1; i <= 39; i++) {
+    let num = i.toString().padStart(2, '0');
+    let div = document.getElementById("btn-" + num);
+    div.className = "number";
+    div.textContent = num;
+    if (clickCounts[num]) {
+      div.classList.add("count-" + (clickCounts[num] > 10 ? "more" : clickCounts[num]));
+      div.textContent = `${num} (${clickCounts[num]})`;
+    } else {
+      unselected.push(num);
+    }
+  }
+  unselectedDiv.textContent = "尚未選取的號碼：\n" + unselected.join(" ");
+  saveData();
+}
+
+function resetAll() {
+  Object.keys(clickCounts).forEach(n => clickCounts[n] = 0);
+  historyStack.length = 0;
+  updateStats();
+}
+
+function undoLast() {
+  const last = historyStack.pop();
+  if (last && clickCounts[last] > 0) {
+    clickCounts[last]--;
+    updateStats();
+  }
+}
+
+function saveData() {
+  localStorage.setItem("clickCounts", JSON.stringify(clickCounts));
+  localStorage.setItem("noteText", noteField.value);
+}
+
+function loadData() {
+  const saved = JSON.parse(localStorage.getItem("clickCounts") || "{}");
+  for (let i = 1; i <= 39; i++) {
+    let n = i.toString().padStart(2, '0');
+    clickCounts[n] = saved[n] || 0;
+  }
+  noteField.value = localStorage.getItem("noteText") || "";
+}
+
+function clearNote() {
+  noteField.value = "";
+  saveNote();
+}
+
+function saveNote() {
+  localStorage.setItem("noteText", noteField.value);
+}
+
+function applyNumbers() {
+  const input = document.getElementById("numberInput").value;
+  const raw = input.replace(/[^\d]/g, " ").split(/\s+/).map(n => parseInt(n, 10));
+  const valid = raw.filter(n => !isNaN(n) && n >= 1 && n <= 39);
+  valid.forEach(n => {
+    const pad = n.toString().padStart(2, '0');
+    clickCounts[pad] = (clickCounts[pad] || 0) + 1;
+    historyStack.push(pad);
+  });
+  updateStats();
+  alert("已套用號碼：" + valid.map(n => n.toString().padStart(2,'0')).join("、"));
+}
+
+function pasteFromClipboard() {
+  navigator.clipboard.readText().then(text => {
+    document.getElementById("numberInput").value = text;
+  }).catch(() => {
+    alert("無法讀取剪貼簿內容");
+  });
+}
+
+for (let i = 1; i <= 39; i++) {
+  let num = i.toString().padStart(2, '0');
+  let div = document.createElement("div");
+  div.className = "number";
+  div.id = "btn-" + num;
+  div.textContent = num;
+  div.addEventListener("click", () => {
+    clickCounts[num] = (clickCounts[num] || 0) + 1;
+    historyStack.push(num);
+    updateStats();
+  });
+  container.appendChild(div);
+}
+
+function factorial(n) {
+  if (n === 0 || n === 1) return 1;
+  let result = 1;
+  for (let i = 2; i <= n; i++) result *= i;
+  return result;
+}
+function C(n, k) {
+  if (k > n) return 0;
+  return factorial(n) / (factorial(k) * factorial(n - k));
+}
+function calculateCombinations() {
+  const count = parseInt(document.getElementById("comboCount").value, 10);
+  const use2 = document.getElementById("star2").checked;
+  const use3 = document.getElementById("star3").checked;
+  const use4 = document.getElementById("star4").checked;
+  const multiplier = parseFloat(document.getElementById("multiplier").value);
+
+  let result = `使用號碼數：${count} 個\n玩法：`;
+  let totalCost = 0;
+  let totalPrize = 0;
+
+  
+const prizeTable = {
+  5: 1.9,
+  6: 2.2,
+  7: 2.58,
+  8: 3.0,
+  9: 3.6,
+  10: 4.2,
+  11: 5.05,
+  12: 6.1
+};
+
+  const selectedStars = [];
+  if (use2) selectedStars.push(2);
+  if (use3) selectedStars.push(3);
+  if (use4) selectedStars.push(4);
+  result += selectedStars.map(s => s + "星").join("、") + `\n投注倍數：${multiplier} 倍\n\n組合數：\n`;
+
+  selectedStars.forEach(star => {
+    const combinations = C(count, star);
+    const cost = combinations * 80 * multiplier;
+    const prize = combinations * prizeTable[star] * multiplier;
+    totalCost += cost;
+    totalPrize += prize;
+    result += `${star}星：${combinations} 組 × 80元 × ${multiplier} = ${cost.toFixed(0)}元\n`;
+  });
+
+  result += `\n總投注金額：${totalCost.toFixed(0)} 元\n\n若中 2 支號碼：\n${use2 ? `→ 中獎兩星獎金：${(C(2, 2) * 5300 * multiplier).toFixed(0)} 元\n` : ""}\n若中 3 支號碼：\n${use2 ? `→ 中獎兩星獎金：${(C(3, 2) * 5300 * multiplier).toFixed(0)} 元\n` : ""}${use3 ? `→ 中獎三星獎金：${(C(3, 3) * 57000 * multiplier).toFixed(0)} 元\n→ 總計：${(C(3,2)*5300*multiplier + C(3,3)*57000*multiplier).toFixed(0)} 元\n` : ""}\n若中 4 支號碼：\n${use2 ? `→ 中獎兩星獎金：${(C(4, 2) * 5300 * multiplier).toFixed(0)} 元\n` : ""}${use3 ? `→ 中獎三星獎金：${(C(4, 3) * 57000 * multiplier).toFixed(0)} 元\n` : ""}${use4 ? `→ 中獎四星獎金：${(C(4, 4) * 750000 * multiplier).toFixed(0)} 元\n→ 總計：${(C(4,2)*5300*multiplier + C(4,3)*57000*multiplier + C(4,4)*750000*multiplier).toFixed(0)} 元\n` : ""}\n`;
+
+  document.getElementById("comboResult").textContent = result;
+
+  const matchNums = myNums.filter(n => drawNums.includes(n));
+  const date = new Date().toLocaleDateString("zh-TW", { month: '2-digit', day: '2-digit' });
+  let hitStars = '', prize = 0;
+  if (matchCount === 2) {
+    hitStars = '2星';
+    prize = 5300 * multiplier;
+  }
+  if (matchCount === 3) {
+    hitStars = '2星、3星';
+    prize = (C(3,2)*5300 + C(3,3)*57000) * multiplier;
+  }
+  if (matchCount >= 4) {
+    hitStars = '2星、3星、4星';
+    prize = (C(4,2)*5300 + C(4,3)*57000 + C(4,4)*750000) * multiplier;
+  }
+  if (matchCount >= 2) {
+    const row = `<tr>
+      <td>${date}</td>
+      <td>${drawNums.join(".")}</td>
+      <td>${myNums.join(" ")}</td>
+      <td>2星3星4星</td>
+      <td>${multiplier}倍</td>
+      <td>${matchNums.join(", ")}</td>
+      <td>${hitStars}</td>
+      <td>${Math.round(prize)}元</td>
+    </tr>`;
+    row = row.replace("</tr>", '<td><button onclick="deleteRow(this)">刪除</button></td></tr>');
+document.querySelector("#historyTable tbody").insertAdjacentHTML("afterbegin", row);
+saveHistory();
+  }
+
+}
+
+loadData();
+updateStats();
+
+function checkWinning() {
+  const myNums = document.getElementById("myNumbers").value.split(/[,\s]+/).map(n => parseInt(n.trim(), 10)).filter(n => !isNaN(n));
+  const drawNums = document.getElementById("drawNumbers").value.split(/[,\s]+/).map(n => parseInt(n.trim(), 10)).filter(n => !isNaN(n));
+  const multiplier = parseFloat(document.getElementById("multiplier").value) || 1;
+  const matchCount = myNums.filter(n => drawNums.includes(n)).length;
+  let result = `你命中 ${matchCount} 支號碼\n`;
+
+  if (matchCount < 2) {
+    result += "未達最低中獎門檻\n";
+  } else {
+    if (matchCount === 2) {
+      result += `→ 中獎兩星獎金：${(5300 * multiplier).toFixed(0)} 元\n`;
+    }
+    if (matchCount === 3) {
+      result += `→ 中獎兩星獎金：${(C(3,2)*5300*multiplier).toFixed(0)} 元\n`;
+      result += `→ 中獎三星獎金：${(C(3,3)*57000*multiplier).toFixed(0)} 元\n`;
+      result += `→ 總計：${((C(3,2)*5300 + C(3,3)*57000) * multiplier).toFixed(0)} 元\n`;
+    }
+    if (matchCount >= 4) {
+      result += `→ 中獎兩星獎金：${(C(4,2)*5300*multiplier).toFixed(0)} 元\n`;
+      result += `→ 中獎三星獎金：${(C(4,3)*57000*multiplier).toFixed(0)} 元\n`;
+      result += `→ 中獎四星獎金：${(C(4,4)*750000*multiplier).toFixed(0)} 元\n`;
+      result += `→ 總計：${((C(4,2)*5300 + C(4,3)*57000 + C(4,4)*750000) * multiplier).toFixed(0)} 元\n`;
+    }
+  }
+  document.getElementById("comboResult").textContent = result;
+
+  const matchNums = myNums.filter(n => drawNums.includes(n));
+  const date = new Date().toLocaleDateString("zh-TW", { month: '2-digit', day: '2-digit' });
+  let hitStars = '', prize = 0;
+  if (matchCount === 2) {
+    hitStars = '2星';
+    prize = 5300 * multiplier;
+  }
+  if (matchCount === 3) {
+    hitStars = '2星、3星';
+    prize = (C(3,2)*5300 + C(3,3)*57000) * multiplier;
+  }
+  if (matchCount >= 4) {
+    hitStars = '2星、3星、4星';
+    prize = (C(4,2)*5300 + C(4,3)*57000 + C(4,4)*750000) * multiplier;
+  }
+  if (matchCount >= 2) {
+    const row = `<tr>
+      <td>${date}</td>
+      <td>${drawNums.join(".")}</td>
+      <td>${myNums.join(" ")}</td>
+      <td>2星3星4星</td>
+      <td>${multiplier}倍</td>
+      <td>${matchNums.join(", ")}</td>
+      <td>${hitStars}</td>
+      <td>${Math.round(prize)}元</td>
+    </tr>`;
+    row = row.replace("</tr>", '<td><button onclick="deleteRow(this)">刪除</button></td></tr>');
+document.querySelector("#historyTable tbody").insertAdjacentHTML("afterbegin", row);
+saveHistory();
+  }
+
+}
+
+
+function toggleHistory() {
+  const wrapper = document.getElementById("historyWrapper");
+  wrapper.style.display = wrapper.style.display === "none" ? "block" : "none";
+}
+
+function saveHistory() {
+  const table = document.querySelector("#historyTable tbody");
+  const rows = Array.from(table.children).map(tr => tr.innerHTML);
+  localStorage.setItem("historyRecords", JSON.stringify(rows));
+}
+
+function loadHistory() {
+  const saved = JSON.parse(localStorage.getItem("historyRecords") || "[]");
+  const tbody = document.querySelector("#historyTable tbody");
+  saved.forEach(row => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = row;
+    tbody.appendChild(tr);
+  });
+}
+
+function deleteRow(btn) {
+  const tr = btn.parentNode.parentNode;
+  tr.remove();
+  saveHistory();
+}
+
+function copyComboToHistory() {
+  const content = document.getElementById("comboResult").textContent.trim();
+  if (!content) {
+    alert("目前沒有可寫入的內容");
+    return;
+  }
+  const date = new Date().toLocaleDateString("zh-TW", { month: '2-digit', day: '2-digit' });
+  const row = `<tr><td colspan="8" style="white-space:pre-wrap;"><strong>${date}</strong><br>${content}</td><td><button onclick="deleteRow(this)">刪除</button></td></tr>`;
+  document.querySelector("#historyTable tbody").insertAdjacentHTML("afterbegin", row);
+  saveHistory();
+}
+
+
+function extractUnselectedToNote() {
+  const noteBox = document.getElementById("note");
+  const rawText = document.getElementById("unselected").textContent;
+  const numbers = rawText.replace("尚未選取的號碼：", "").trim().split(/\s+/).filter(x => /^\d{2}$/.test(x));
+  const existing = noteBox.value.split(/\s+/);
+  const unique = numbers.filter(n => !existing.includes(n));
+  if (unique.length > 0) {
+    const sorted = unique.sort((a, b) => parseInt(a) - parseInt(b));
+    noteBox.value += (noteBox.value ? "\n" : "") + sorted.join(" ");
+    saveNote?.();
+  } else {
+    alert("備註區已有相同號碼，未新增重複內容");
+  }
+}
+
+
+function extractGroupSorted(title) {
+  const statsDiv = document.getElementById("stats");
+  const noteBox = document.getElementById("note");
+  const blocks = statsDiv.querySelectorAll(".group-title");
+  for (let block of blocks) {
+    if (block.textContent === title) {
+      const rawText = block.parentElement.textContent;
+      const allNums = [...rawText.matchAll(/\b\d{2}(?=\s|\(|$)/g)].map(m => m[0]);
+      const existing = noteBox.value.split(/\s+/);
+      const filtered = allNums.filter(n => !existing.includes(n));
+      if (filtered.length > 0) {
+        const sorted = filtered.sort((a, b) => parseInt(a) - parseInt(b));
+        noteBox.value += (noteBox.value ? "\n" : "") + sorted.join(" ");
+        saveNote?.();
+      } else {
+        alert("備註區已有相同號碼，未新增重複內容");
+      }
+    }
+  }
+}
+function insertGroupExtractButtons() {
+  const groups = document.querySelectorAll("#stats .group-title");
+  for (let group of groups) {
+    if (!group.nextSibling || group.nextSibling.nodeName !== "BUTTON") {
+      const btn = document.createElement("button");
+      btn.textContent = "提取";
+      btn.style.marginLeft = "10px";
+      btn.onclick = () => extractGroupSorted(group.textContent);
+      group.parentElement.insertBefore(btn, group.nextSibling);
+    }
+  }
+}
+setInterval(insertGroupExtractButtons, 1000);
+
+</script>
+<script>
+function clearBetInput() {
+  const betInput = document.getElementById("betInput");
+  if (betInput) {
+    betInput.value = "";
+    localStorage.removeItem("betInputText");
+  }
+}
+function saveBetInput() {
+  const betInput = document.getElementById("betInput");
+  if (betInput) {
+    localStorage.setItem("betInputText", betInput.value);
+  }
+}
+function loadBetInput() {
+  const saved = localStorage.getItem("betInputText");
+  if (saved) {
+    document.getElementById("betInput").value = saved;
+  }
+}
+window.addEventListener("load", loadBetInput);
+document.addEventListener("DOMContentLoaded", () => {
+  const betInput = document.getElementById("betInput");
+  if (betInput) {
+    betInput.addEventListener("input", saveBetInput);
+  }
+});
+</script><script>
+function copyNoteToBetInput() {
+  const noteText = document.getElementById("note").value.trim();
+  const betInput = document.getElementById("betInput");
+  if (noteText) {
+    betInput.value = noteText;
+    alert("備註內容已貼上到下注識別區");
+  } else {
+    alert("備註區沒有內容");
+  }
+}
+</script><script>
+function saveDrawInput() {
+  const input = document.getElementById("drawInput");
+  if (input) {
+    localStorage.setItem("drawInputText", input.value);
+  }
+}
+function loadDrawInput() {
+  const saved = localStorage.getItem("drawInputText");
+  if (saved) {
+    document.getElementById("drawInput").value = saved;
+  }
+}
+window.addEventListener("load", loadDrawInput);
+document.addEventListener("DOMContentLoaded", () => {
+  const input = document.getElementById("drawInput");
+  if (input) {
+    input.addEventListener("input", saveDrawInput);
+  }
+});
+<script>
+function sortBetLines() {
+  const betInput = document.getElementById("betInput");
+  const lines = betInput.value.trim().split(/\n+/);
+  const sortedLines = lines.map(line => {
+    const tokens = line.trim().split(/\s+/);
+    const numbers = [];
+    let suffixIndex = tokens.length;
+
+    for (let i = 0; i < tokens.length; i++) {
+      const t = tokens[i];
+      if (/^\d{1,2}$/.test(t) && parseInt(t) >= 1 && parseInt(t) <= 39) {
+        numbers.push(t.padStart(2, '0'));
+      } else {
+        suffixIndex = i;
+        break;
+      }
+    }
+
+    const sorted = numbers.sort((a, b) => parseInt(a) - parseInt(b));
+    const suffix = tokens.slice(suffixIndex).join(" ");
+    return sorted.join(" ") + (suffix ? " " + suffix : "");
+  });
+  betInput.value = sortedLines.join("\n");
+  alert("每注號碼已排序完成");
+}
+</script><script>
+function sortNoteLines() {
+  const note = document.getElementById("note");
+  if (!note) return;
+  const lines = note.value.trim().split(/\n+/);
+  const sortedLines = lines.map(line => {
+    const tokens = line.trim().split(/\s+/);
+    const numbers = [];
+    let suffixIndex = tokens.length;
+    for (let i = 0; i < tokens.length; i++) {
+      const t = tokens[i];
+      if (/^\d{1,2}$/.test(t) && parseInt(t) >= 1 && parseInt(t) <= 39) {
+        numbers.push(t.padStart(2, '0'));
+      } else {
+        suffixIndex = i;
+        break;
+      }
+    }
+    const sorted = numbers.sort((a, b) => parseInt(a) - parseInt(b));
+    const suffix = tokens.slice(suffixIndex).join(" ");
+    return sorted.join(" ") + (suffix ? " " + suffix : "");
+  });
+  note.value = sortedLines.join("\n");
+  alert("備註區每注號碼已排序完成");
+}
+</script><h3>回補型馬丁月曆模擬</h3>
+<div id="calendarSection">
+<label for="martinBase">起始投注金額：</label>
+<div style="margin-top: 10px;">
+<br/>
+<span style="background:black;color:lightgreen;padding:2px 8px;margin-right:5px;">未中</span>
+<span style="background:red;color:white;padding:2px 8px;margin-right:5px;">中獎</span>
+<span style="background:#0066cc;color:white;padding:2px 8px;margin-right:5px;">第二次未中</span>
+<span style="background:#ff9900;color:black;padding:2px 8px;margin-right:5px;">第二次中獎</span>
+</div>
+<input id="martinBase" type="number" value="1000"/>
+<div style="margin-top: 10px;">
+<label for="noDrawCount">選擇不出組數：</label>
+<select id="noDrawCount">
+<option value="5">5 不出</option>
+<option value="6">6 不出</option>
+<option value="7">7 不出</option>
+<option value="8">8 不出</option>
+<option value="9">9 不出</option>
+<option value="10">10 不出</option>
+<option value="11">11 不出</option>
+<option value="12">12 不出</option>
+</select>
+</div>
+<button onclick="applyMartin()">套用</button>
+<button onclick="resetMartin()">清除月曆</button>
+<button id="clearMartin">清除月曆</button><div id="martinCalendar" style="margin-top:10px;display:grid;grid-template-columns:repeat(7,1fr);gap:5px;"></div>
+<div id="martinSummary" style="margin-top:10px;font-weight:bold;"></div>
+<div id="martinDetail" style="margin-top:10px;white-space:pre-wrap;font-size:15px;"></div>
+</div>
+<script>
+function saveDrawInput() {
+  const input = document.getElementById("drawInput");
+  if (input) {
+    localStorage.setItem("drawInputText", input.value);
+  }
+}
+function loadDrawInput() {
+  const saved = localStorage.getItem("drawInputText");
+  if (saved) {
+    document.getElementById("drawInput").value = saved;
+  }
+}
+window.addEventListener("load", loadDrawInput);
+document.addEventListener("DOMContentLoaded", () => {
+  const input = document.getElementById("drawInput");
+  if (input) {
+    input.addEventListener("input", saveDrawInput);
+  }
+});
+</script>
+<script>
+let martinState = Array.from({length: 31}, () => [{state:0, mode:5, bet:1000}, {state:0, mode:5, bet:1000}]);
+const noDrawPrizeTable = {
+  5: 1.9, 6: 2.2, 7: 2.58, 8: 3.0, 9: 3.6, 10: 4.2, 11: 5.05, 12: 6.1
+};
+
+function renderMartinCalendar() {
+  const cal = document.getElementById("martinCalendar");
+  const summary = document.getElementById("martinSummary");
+  const detail = document.getElementById("martinDetail");
+  cal.innerHTML = "";
+  let totalGain = 0;
+  let accLoss = 0;
+  detail.innerText = "";
+
+  for (let i = 0; i < 31; i++) {
+    const row = document.createElement("div");
+    row.className = "dual-cell";
+    const label = document.createElement("div");
+    label.textContent = `第${i + 1}日`;
+    row.appendChild(label);
+
+    for (let j = 0; j < 2; j++) {
+      const entry = martinState[i][j];
+      if (!entry) entry = {state:0, mode:5, bet:1000}; martinState[i][j] = entry;
+      const btn = document.createElement("div");
+      btn.className = "cell-" + martinState[i][j].state;
+      btn.textContent = j === 0 ? "第一次" : "第二次";
+      btn.addEventListener("click", (e) => {
+        toggleMartin(i, j); openSettingDialog(i, j);
+      });
+      row.appendChild(btn);
+    }
+
+    cal.appendChild(row);
+  }
+
+  for (let i = 0; i < 31; i++) {
+    for (let j = 0; j < 2; j++) {
+      const entry = martinState[i][j];
+      if (!entry) continue;
+      const { state, mode, bet } = entry;
+      if (state === 1) {
+        accLoss += bet;
+        detail.innerText += `第${i+1}日：第${j+1}次未中，玩法${mode}不出，投注${bet}元，累積 ${accLoss} 元\n`;
+      } else if (state === 2) {
+        const prize = Math.floor(bet * (noDrawPrizeTable[mode] || 0));
+        const profit = prize - bet - accLoss;
+        totalGain += profit;
+        detail.innerText += `第${i+1}日：第${j+1}次中獎，玩法${mode}不出，投注${bet}元，獎金${prize}元，淨利${profit}元\n`;
+        accLoss = 0;
+      }
+    }
+  }
+
+  summary.innerText = `本月總獲利：${totalGain} 元\n累計未中投注金額：${accLoss} 元`;
+}
+
+function toggleMartin(day, index) {
+  let item = martinState[day][index];
+  item.state = (item.state + 1) % 3;
+  saveMartinData();
+  renderMartinCalendar();
+}
+
+function openSettingDialog(day, index) {
+  let current = martinState[day][index];
+  if (!current || typeof current.mode !== "number" || typeof current.bet !== "number") {
+    martinState[day][index] = {state: 0, mode: 5, bet: 1000};
+    current = martinState[day][index];
+  }
+  const input = prompt("請輸入玩法(5~12)與金額，例如：10,2000", current.mode + "," + current.bet);
+  if (!input) return;
+  const [m, b] = input.split(",").map(s => parseInt(s.trim()));
+  if ([5,6,7,8,9,10,11,12].includes(m) && b > 0) {
+    martinState[day][index].mode = m;
+    martinState[day][index].bet = b;
+    saveMartinData();
+    renderMartinCalendar();
+  } else {
+    alert("輸入格式錯誤，請用 玩法,金額 例如 10,3000");
+  }
+}
+
+function saveMartinData() {
+  localStorage.setItem("martinState", JSON.stringify(martinState));
+}
+
+function loadMartinData() {
+  const saved = JSON.parse(localStorage.getItem("martinState") || "null");
+  if (Array.isArray(saved)) {
+    martinState = saved.map(row => row.map(cell => {
+      if (!cell) return {state:0, mode:5, bet:1000};
+      if (typeof cell.mode !== "number") cell.mode = 5;
+      if (typeof cell.bet !== "number") cell.bet = 1000;
+      return cell;
+    }));
+  }
+}
+
+function clearMartinData() {
+  martinState = Array.from({length: 31}, () => [{state:0, mode:5, bet:1000}, {state:0, mode:5, bet:1000}]);
+  saveMartinData();
+  renderMartinCalendar();
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  loadMartinData();
+  renderMartinCalendar();
+  const clearBtn = document.getElementById("clearMartin");
+  if (clearBtn) {
+    clearBtn.addEventListener("click", clearMartinData);
+  }
+});
+</script></body>
+</html>
+<script>
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadMartinData();
+  applyMartin();
+  renderMartinCalendar();
+});
+
+</script>
