@@ -1,6 +1,6 @@
 {
   "title": "【天天樂遺漏比對】",
   "matched": [],
-  "updated_at": "2025-12-11 21:26 UTC",
-  "error": "遺漏表格未找到；次數表格未找到；"
+  "updated_at": "2025-12-12 21:22 UTC",
+  "error": "遺漏表格未找到；次數資料錯誤：HTTPSConnectionPool(host='www.calotteryx.com', port=443): Max retries exceeded with url: /Fantasy-5/latest-50-draws/order-by-ranks/frequency-chart.htm (Caused by NameResolutionError(\"HTTPSConnection(host='www.calotteryx.com', port=443): Failed to resolve 'www.calotteryx.com' ([Errno -3] Temporary failure in name resolution)\"))；"
 }
