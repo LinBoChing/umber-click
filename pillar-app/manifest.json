@@ -1,0 +1,25 @@
+{
+  "name": "49號立柱計算神器",
+  "short_name": "49柱神器",
+  "description": "可放到手機桌面的立柱計算工具，支援 539、天天樂、香港六合彩、大樂透。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f7fb",
+  "theme_color": "#2563eb",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,1 +1,981 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2563eb" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="49柱神器" />
 
+  <title>49號立柱計算神器 v3</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --line: #dfe3ea;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --accent-2: #1d4ed8;
+      --ok: #15803d;
+      --warn: #b45309;
+      --bad: #b91c1c;
+      --shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .wrap {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 18px;
+    }
+
+    h1, h2, h3 { margin: 0 0 10px; }
+
+    .hero {
+      background: linear-gradient(135deg, #eff6ff, #ffffff);
+      border: 1px solid #dbeafe;
+      border-radius: 24px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+      margin-bottom: 18px;
+    }
+
+    .hero p {
+      margin: 8px 0 0;
+      color: var(--muted);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .card + .card { margin-top: 18px; }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 6px; }
+
+    .field label {
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .game-meta, .memory-status {
+      margin-top: 4px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .game-meta {
+      background: #f8fbff;
+      border: 1px solid #dbeafe;
+      color: #1e3a8a;
+    }
+
+    .memory-status {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      color: #334155;
+    }
+
+    textarea, input, select, button {
+      font: inherit;
+    }
+
+    textarea, input, select {
+      width: 100%;
+      border: 1px solid #cfd6e3;
+      border-radius: 12px;
+      padding: 12px 13px;
+      background: #fff;
+      color: var(--text);
+    }
+
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    input[type="number"] { min-height: 46px; }
+
+    .btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 16px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: transform .08s ease, opacity .15s ease;
+    }
+
+    button:hover { opacity: .95; }
+    button:active { transform: translateY(1px); }
+
+    .primary { background: var(--accent); color: #fff; }
+    .secondary { background: #e5edff; color: var(--accent-2); }
+    .ghost { background: #f3f4f6; color: #374151; }
+    .success { background: #dcfce7; color: #166534; }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      background: #fff;
+    }
+
+    .stat .label {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .stat .value {
+      font-size: 24px;
+      font-weight: 800;
+    }
+
+    .columns {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .pillar {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      background: #fcfcff;
+    }
+
+    .pillar-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-weight: 800;
+    }
+
+    .num-box {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 54px;
+    }
+
+    .ball {
+      min-width: 42px;
+      text-align: center;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #3730a3;
+      font-weight: 700;
+      border: 1px solid #dbeafe;
+    }
+
+    .substats {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    .table th, .table td {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .table th { background: #fafbff; }
+
+    .profit-positive { color: var(--ok); font-weight: 800; }
+    .profit-negative { color: var(--bad); font-weight: 800; }
+    .profit-neutral { color: var(--warn); font-weight: 800; }
+
+    .footer-note {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .error {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: #fff1f2;
+      color: #be123c;
+      border: 1px solid #fecdd3;
+      display: none;
+      white-space: pre-wrap;
+    }
+
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: 1fr; }
+      .controls, .stat-grid, .columns { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1>49號立柱計算神器 v3</h1>
+      <p>本版已加強三柱同時均衡評估，除了大小、單雙，也會一起考量頭數分散，降低出現某柱完全缺少 0 頭、1 頭等極端排列的機率。並新增記憶立柱號碼，以及把「自動排列」與「開獎計算」拆成兩個按鈕。</p>
+    </section>
+
+    <div class="grid">
+      <div>
+        <section class="card">
+          <h2>設定區</h2>
+          <div class="controls">
+            <div class="field">
+              <label for="gameType">彩種</label>
+              <select id="gameType">
+                <option value="539">539／天天樂</option>
+                <option value="lotto">香港六合彩／大樂透</option>
+              </select>
+              <div class="hint">不同彩種會切換總彩球數與開獎支數。</div>
+              <div class="game-meta" id="gameMeta">目前資料庫：01~39，共 39 球；開獎 5 支；二星獎金 5300。</div>
+            </div>
+
+            <div class="field">
+              <label for="multiplier">下注倍數</label>
+              <input id="multiplier" type="number" min="0.1" max="1" step="0.1" value="1" />
+              <div class="hint">可輸入 0.1 ~ 1 倍。</div>
+              <div class="memory-status" id="memoryStatus">目前沒有記憶的立柱號碼。</div>
+            </div>
+
+            <div class="field" style="grid-column: 1 / -1;">
+              <label for="excludeInput">排除號碼</label>
+              <textarea id="excludeInput" placeholder="例如：02 05 10 21 23"></textarea>
+              <div class="hint" id="excludeHint">可輸入空白、逗號、換行分隔。號碼範圍 01~39。</div>
+            </div>
+
+            <div class="field" style="grid-column: 1 / -1;">
+              <label for="drawInput">開獎號碼（選填）</label>
+              <input id="drawInput" type="text" placeholder="例如：01 09 18 27 33" />
+              <div class="hint" id="drawHint">目前彩種開獎 5 支，排列完畢後，再按「輸入開獎號碼計算」即可試算中獎結果。</div>
+            </div>
+          </div>
+
+          <div class="btns">
+            <button class="primary" id="arrangeBtn">自動排列號碼</button>
+            <button class="secondary" id="computeBtn">輸入開獎號碼計算</button>
+            <button class="success" id="saveBtn">記憶目前立柱</button>
+            <button class="ghost" id="loadBtn">載入記憶立柱</button>
+            <button class="ghost" id="reshuffleBtn">重新排列</button>
+            <button class="ghost" id="clearMemoryBtn">清除記憶立柱</button>
+            <button class="ghost" id="clearBtn">清空</button>
+          </div>
+
+          <div class="error" id="errorBox"></div>
+        </section>
+
+        <section class="card">
+          <h2>總覽</h2>
+          <div class="stat-grid">
+            <div class="stat"><div class="label">總彩球數</div><div class="value" id="baseCount">39</div></div>
+            <div class="stat"><div class="label">開獎支數</div><div class="value" id="drawCount">5</div></div>
+            <div class="stat"><div class="label">排除數量</div><div class="value" id="excludedCount">0</div></div>
+            <div class="stat"><div class="label">剩餘號碼</div><div class="value" id="remainingCount">39</div></div>
+            <div class="stat"><div class="label">二星總組數</div><div class="value" id="twoStarCombos">0</div></div>
+          </div>
+          <div class="stat-grid" style="margin-top:12px;">
+            <div class="stat"><div class="label">三星總組數</div><div class="value" id="threeStarCombos">0</div></div>
+          </div>
+        </section>
+      </div>
+
+      <div>
+        <section class="card">
+          <h2>柱位結果</h2>
+          <div class="columns">
+            <div class="pillar">
+              <div class="pillar-title"><span>第一柱</span><span id="p1Count">0 支</span></div>
+              <div class="num-box" id="pillar1"></div>
+              <div class="substats" id="p1Stats">大小：0/0　單雙：0/0　頭數：-</div>
+            </div>
+            <div class="pillar">
+              <div class="pillar-title"><span>第二柱</span><span id="p2Count">0 支</span></div>
+              <div class="num-box" id="pillar2"></div>
+              <div class="substats" id="p2Stats">大小：0/0　單雙：0/0　頭數：-</div>
+            </div>
+            <div class="pillar">
+              <div class="pillar-title"><span>第三柱</span><span id="p3Count">0 支</span></div>
+              <div class="num-box" id="pillar3"></div>
+              <div class="substats" id="p3Stats">大小：0/0　單雙：0/0　頭數：-</div>
+            </div>
+          </div>
+          <div class="footer-note">立柱規則：第一柱固定 10 支；其餘號碼由第二柱、第三柱平分。排列時會同時評估三柱的大小、單雙與頭數分散。</div>
+        </section>
+      </div>
+    </div>
+
+    <section class="card">
+      <h2>成本與獎金</h2>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>項目</th>
+            <th>公式</th>
+            <th>結果</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>二星本金</td>
+            <td id="twoStarCostFormula">二星總組數 × 71.8 × 倍數</td>
+            <td id="twoStarCost">0</td>
+          </tr>
+          <tr>
+            <td>三星本金</td>
+            <td id="threeStarCostFormula">三星總組數 × 62.5 × 倍數</td>
+            <td id="threeStarCost">0</td>
+          </tr>
+          <tr>
+            <td><strong>總本金</strong></td>
+            <td>二星本金 + 三星本金</td>
+            <td id="totalCost"><strong>0</strong></td>
+          </tr>
+          <tr>
+            <td>二星單組獎金</td>
+            <td id="twoStarPrizeFormula">二星獎金 × 倍數</td>
+            <td id="twoStarPrize">0</td>
+          </tr>
+          <tr>
+            <td>三星單組獎金</td>
+            <td>57000 × 倍數</td>
+            <td id="threeStarPrize">0</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>開獎結果試算</h2>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>項目</th>
+            <th>內容</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>第一柱命中</td><td id="hitP1">0 支</td></tr>
+          <tr><td>第二柱命中</td><td id="hitP2">0 支</td></tr>
+          <tr><td>第三柱命中</td><td id="hitP3">0 支</td></tr>
+          <tr><td>二星中獎組數</td><td id="hitTwoStar">0 組</td></tr>
+          <tr><td>三星中獎組數</td><td id="hitThreeStar">0 組</td></tr>
+          <tr><td>二星總獎金</td><td id="winTwoStar">0</td></tr>
+          <tr><td>三星總獎金</td><td id="winThreeStar">0</td></tr>
+          <tr><td><strong>總獎金</strong></td><td id="totalWin"><strong>0</strong></td></tr>
+          <tr><td><strong>最終損益</strong></td><td id="netProfit" class="profit-neutral"><strong>0</strong></td></tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+
+  <script>
+    const TWO_STAR_COST_PER_BET = 71.8;
+    const THREE_STAR_COST_PER_BET = 62.5;
+    const THREE_STAR_PRIZE = 57000;
+    const MEMORY_KEY = 'pillar-memory-v3';
+
+    const GAME_CONFIG = {
+      "539": {
+        label: "539／天天樂",
+        totalBalls: 39,
+        drawBalls: 5,
+        twoStarPrize: 5300
+      },
+      "lotto": {
+        label: "香港六合彩／大樂透",
+        totalBalls: 49,
+        drawBalls: 6,
+        twoStarPrize: 5700
+      }
+    };
+
+    let shuffleSeed = 0;
+    let currentPillars = null;
+
+    const el = {
+      excludeInput: document.getElementById('excludeInput'),
+      multiplier: document.getElementById('multiplier'),
+      gameType: document.getElementById('gameType'),
+      gameMeta: document.getElementById('gameMeta'),
+      excludeHint: document.getElementById('excludeHint'),
+      drawInput: document.getElementById('drawInput'),
+      drawHint: document.getElementById('drawHint'),
+      memoryStatus: document.getElementById('memoryStatus'),
+      arrangeBtn: document.getElementById('arrangeBtn'),
+      computeBtn: document.getElementById('computeBtn'),
+      saveBtn: document.getElementById('saveBtn'),
+      loadBtn: document.getElementById('loadBtn'),
+      reshuffleBtn: document.getElementById('reshuffleBtn'),
+      clearMemoryBtn: document.getElementById('clearMemoryBtn'),
+      clearBtn: document.getElementById('clearBtn'),
+      errorBox: document.getElementById('errorBox'),
+      baseCount: document.getElementById('baseCount'),
+      drawCount: document.getElementById('drawCount'),
+      excludedCount: document.getElementById('excludedCount'),
+      remainingCount: document.getElementById('remainingCount'),
+      twoStarCombos: document.getElementById('twoStarCombos'),
+      threeStarCombos: document.getElementById('threeStarCombos'),
+      pillar1: document.getElementById('pillar1'),
+      pillar2: document.getElementById('pillar2'),
+      pillar3: document.getElementById('pillar3'),
+      p1Count: document.getElementById('p1Count'),
+      p2Count: document.getElementById('p2Count'),
+      p3Count: document.getElementById('p3Count'),
+      p1Stats: document.getElementById('p1Stats'),
+      p2Stats: document.getElementById('p2Stats'),
+      p3Stats: document.getElementById('p3Stats'),
+      twoStarCostFormula: document.getElementById('twoStarCostFormula'),
+      threeStarCostFormula: document.getElementById('threeStarCostFormula'),
+      twoStarCost: document.getElementById('twoStarCost'),
+      threeStarCost: document.getElementById('threeStarCost'),
+      totalCost: document.getElementById('totalCost'),
+      twoStarPrizeFormula: document.getElementById('twoStarPrizeFormula'),
+      twoStarPrize: document.getElementById('twoStarPrize'),
+      threeStarPrize: document.getElementById('threeStarPrize'),
+      hitP1: document.getElementById('hitP1'),
+      hitP2: document.getElementById('hitP2'),
+      hitP3: document.getElementById('hitP3'),
+      hitTwoStar: document.getElementById('hitTwoStar'),
+      hitThreeStar: document.getElementById('hitThreeStar'),
+      winTwoStar: document.getElementById('winTwoStar'),
+      winThreeStar: document.getElementById('winThreeStar'),
+      totalWin: document.getElementById('totalWin'),
+      netProfit: document.getElementById('netProfit'),
+    };
+
+    function getConfig() {
+      return GAME_CONFIG[el.gameType.value];
+    }
+
+    function getBaseNumbers(maxNum) {
+      return Array.from({ length: maxNum }, (_, i) => i + 1);
+    }
+
+    function formatMoney(num) {
+      return Number(num).toLocaleString('zh-TW', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      });
+    }
+
+    function formatNumber2(n) {
+      return String(n).padStart(2, '0');
+    }
+
+    function parseNumbers(text, maxNum) {
+      if (!text.trim()) return [];
+      const parts = text.match(/\d+/g) || [];
+      const nums = parts.map(n => Number(n)).filter(n => Number.isInteger(n) && n >= 1 && n <= maxNum);
+      return [...new Set(nums)].sort((a, b) => a - b);
+    }
+
+    function validateMultiplier(value) {
+      const n = Number(value);
+      return Number.isFinite(n) && n >= 0.1 && n <= 1;
+    }
+
+    function getBoundary(maxNum) {
+      return Math.floor(maxNum / 2);
+    }
+
+    function isBig(n, maxNum) { return n > getBoundary(maxNum); }
+    function isOdd(n) { return n % 2 === 1; }
+    function getHead(n) { return Math.floor(n / 10); }
+
+    function countStats(arr, maxNum) {
+      const big = arr.filter(n => isBig(n, maxNum)).length;
+      const small = arr.length - big;
+      const odd = arr.filter(isOdd).length;
+      const even = arr.length - odd;
+      const headMap = {};
+      arr.forEach(n => {
+        const h = getHead(n);
+        headMap[h] = (headMap[h] || 0) + 1;
+      });
+      return { big, small, odd, even, headMap };
+    }
+
+    function headText(arr, maxNum) {
+      const maxHead = Math.floor(maxNum / 10);
+      const stats = countStats(arr, maxNum);
+      const parts = [];
+      for (let h = 0; h <= maxHead; h++) {
+        parts.push(`${h}頭${stats.headMap[h] || 0}`);
+      }
+      return parts.join(' / ');
+    }
+
+    function seededRandom(seed) {
+      const x = Math.sin(seed) * 10000;
+      return x - Math.floor(x);
+    }
+
+    function shuffleArray(arr, seedBase) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const r = seededRandom(seedBase + i * 17.13);
+        const j = Math.floor(r * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function createTargets(available, sizes, maxNum) {
+      const total = available.length;
+      const overall = countStats(available, maxNum);
+      const maxHead = Math.floor(maxNum / 10);
+      const targets = sizes.map(size => {
+        const t = {
+          size,
+          big: (overall.big / total) * size,
+          odd: (overall.odd / total) * size,
+          heads: {}
+        };
+        for (let h = 0; h <= maxHead; h++) {
+          const headCount = overall.headMap[h] || 0;
+          t.heads[h] = (headCount / total) * size;
+        }
+        return t;
+      });
+      return targets;
+    }
+
+    function pillarPenalty(pillar, target, maxNum) {
+      const stats = countStats(pillar, maxNum);
+      let score = 0;
+      score += Math.abs(stats.big - target.big) * 2.2;
+      score += Math.abs(stats.odd - target.odd) * 2.0;
+
+      const maxHead = Math.floor(maxNum / 10);
+      for (let h = 0; h <= maxHead; h++) {
+        const actual = stats.headMap[h] || 0;
+        const ideal = target.heads[h] || 0;
+        score += Math.abs(actual - ideal) * 1.8;
+
+        if (pillar.length >= Math.min(6, target.size) && ideal >= 0.7 && actual === 0) {
+          score += 6;
+        }
+      }
+
+      const sizeGap = target.size - pillar.length;
+      if (sizeGap < 0) score += 1000;
+      if (pillar.length > 0 && target.size > 0 && pillar.length < target.size / 2) {
+        score += 1.2;
+      }
+      return score;
+    }
+
+    function globalPenalty(pillars, targets, maxNum) {
+      return pillars.reduce((sum, pillar, idx) => sum + pillarPenalty(pillar, targets[idx], maxNum), 0);
+    }
+
+    function balancePillars(available, maxNum) {
+      if (available.length < 12) {
+        throw new Error('扣除後剩餘號碼太少，至少需要保留 12 支以上，才可分成三柱。');
+      }
+      if ((available.length - 10) < 2) {
+        throw new Error('第一柱固定 10 支後，第二柱與第三柱至少各要 1 支。');
+      }
+
+      const size1 = 10;
+      const remain = available.length - size1;
+      const size2 = Math.floor(remain / 2);
+      const size3 = remain - size2;
+      if (size2 < 1 || size3 < 1) {
+        throw new Error('第二柱與第三柱分配失敗，請減少排除號碼。');
+      }
+
+      const sizes = [size1, size2, size3];
+      const targets = createTargets(available, sizes, maxNum);
+      const shuffled = shuffleArray(available, Date.now() + shuffleSeed * 97);
+
+      const pillars = [[], [], []];
+
+      for (const num of shuffled) {
+        const options = [];
+        for (let i = 0; i < 3; i++) {
+          if (pillars[i].length >= sizes[i]) continue;
+          const testPillars = pillars.map(arr => [...arr]);
+          testPillars[i].push(num);
+          const score = globalPenalty(testPillars, targets, maxNum);
+          options.push({ idx: i, score });
+        }
+        options.sort((a, b) => a.score - b.score);
+        pillars[options[0].idx].push(num);
+      }
+
+      return pillars.map(arr => arr.sort((a, b) => a - b));
+    }
+
+    function renderBalls(container, arr) {
+      container.innerHTML = '';
+      arr.forEach(n => {
+        const span = document.createElement('span');
+        span.className = 'ball';
+        span.textContent = formatNumber2(n);
+        container.appendChild(span);
+      });
+    }
+
+    function setStatsText(target, arr, maxNum) {
+      const st = countStats(arr, maxNum);
+      target.textContent = `大小：大 ${st.big} / 小 ${st.small}　單雙：單 ${st.odd} / 雙 ${st.even}　頭數：${headText(arr, maxNum)}`;
+    }
+
+    function showError(msg) {
+      el.errorBox.style.display = 'block';
+      el.errorBox.textContent = msg;
+    }
+
+    function clearError() {
+      el.errorBox.style.display = 'none';
+      el.errorBox.textContent = '';
+    }
+
+    function updateGameUi() {
+      const cfg = getConfig();
+      el.gameMeta.textContent = `目前資料庫：01~${formatNumber2(cfg.totalBalls)}，共 ${cfg.totalBalls} 球；開獎 ${cfg.drawBalls} 支；二星獎金 ${cfg.twoStarPrize}。`;
+      el.excludeHint.textContent = `可輸入空白、逗號、換行分隔。號碼範圍 01~${formatNumber2(cfg.totalBalls)}。`;
+      el.drawHint.textContent = `目前彩種開獎 ${cfg.drawBalls} 支，排列完畢後，再按「輸入開獎號碼計算」即可試算中獎結果。`;
+      el.baseCount.textContent = cfg.totalBalls;
+      el.drawCount.textContent = cfg.drawBalls;
+      el.drawInput.placeholder = cfg.drawBalls === 5 ? "例如：01 09 18 27 33" : "例如：03 11 19 26 35 47";
+      refreshMemoryStatus();
+    }
+
+    function resetDrawResults() {
+      el.hitP1.textContent = '0 支';
+      el.hitP2.textContent = '0 支';
+      el.hitP3.textContent = '0 支';
+      el.hitTwoStar.textContent = '0 組';
+      el.hitThreeStar.textContent = '0 組';
+      el.winTwoStar.textContent = '0';
+      el.winThreeStar.textContent = '0';
+      el.totalWin.innerHTML = '<strong>0</strong>';
+      el.netProfit.innerHTML = '<strong>0</strong>';
+      el.netProfit.className = 'profit-neutral';
+    }
+
+    function renderArrangement(config, excluded, remaining, p1, p2, p3, multiplier) {
+      const a = p1.length, b = p2.length, c = p3.length;
+      const twoCombos = a * b + a * c + b * c;
+      const threeCombos = a * b * c;
+      const twoCost = twoCombos * TWO_STAR_COST_PER_BET * multiplier;
+      const threeCost = threeCombos * THREE_STAR_COST_PER_BET * multiplier;
+      const totalCost = twoCost + threeCost;
+      const twoPrize = config.twoStarPrize * multiplier;
+      const threePrize = THREE_STAR_PRIZE * multiplier;
+
+      el.baseCount.textContent = config.totalBalls;
+      el.drawCount.textContent = config.drawBalls;
+      el.excludedCount.textContent = excluded.length;
+      el.remainingCount.textContent = remaining.length;
+      el.twoStarCombos.textContent = formatMoney(twoCombos);
+      el.threeStarCombos.textContent = formatMoney(threeCombos);
+
+      renderBalls(el.pillar1, p1);
+      renderBalls(el.pillar2, p2);
+      renderBalls(el.pillar3, p3);
+      el.p1Count.textContent = `${a} 支`;
+      el.p2Count.textContent = `${b} 支`;
+      el.p3Count.textContent = `${c} 支`;
+      setStatsText(el.p1Stats, p1, config.totalBalls);
+      setStatsText(el.p2Stats, p2, config.totalBalls);
+      setStatsText(el.p3Stats, p3, config.totalBalls);
+
+      el.twoStarCostFormula.textContent = `${formatMoney(twoCombos)} × 71.8 × ${multiplier}`;
+      el.threeStarCostFormula.textContent = `${formatMoney(threeCombos)} × 62.5 × ${multiplier}`;
+      el.twoStarCost.textContent = formatMoney(twoCost);
+      el.threeStarCost.textContent = formatMoney(threeCost);
+      el.totalCost.innerHTML = `<strong>${formatMoney(totalCost)}</strong>`;
+      el.twoStarPrizeFormula.textContent = `${config.twoStarPrize} × ${multiplier}`;
+      el.twoStarPrize.textContent = formatMoney(twoPrize);
+      el.threeStarPrize.textContent = formatMoney(threePrize);
+
+      currentPillars = {
+        gameType: el.gameType.value,
+        excluded,
+        remaining,
+        p1, p2, p3
+      };
+      resetDrawResults();
+    }
+
+    function arrangePillars(useNewShuffle = false) {
+      clearError();
+      try {
+        const config = getConfig();
+        const baseNumbers = getBaseNumbers(config.totalBalls);
+        const excluded = parseNumbers(el.excludeInput.value, config.totalBalls);
+        const remaining = baseNumbers.filter(n => !excluded.includes(n));
+        const multiplier = Number(el.multiplier.value);
+
+        if (!validateMultiplier(multiplier)) {
+          throw new Error('下注倍數請輸入 0.1 ~ 1 之間的數字。');
+        }
+
+        if (useNewShuffle) shuffleSeed += 1;
+
+        const [p1, p2, p3] = balancePillars(remaining, config.totalBalls);
+        renderArrangement(config, excluded, remaining, p1, p2, p3, multiplier);
+      } catch (err) {
+        showError(err.message || '發生未知錯誤。');
+      }
+    }
+
+    function computeDrawResult() {
+      clearError();
+      try {
+        if (!currentPillars) {
+          throw new Error('請先按「自動排列號碼」產生立柱，再輸入開獎號碼計算。');
+        }
+
+        const config = getConfig();
+        const multiplier = Number(el.multiplier.value);
+        if (!validateMultiplier(multiplier)) {
+          throw new Error('下注倍數請輸入 0.1 ~ 1 之間的數字。');
+        }
+
+        if (currentPillars.gameType !== el.gameType.value) {
+          throw new Error('目前彩種已變更，請重新排列一次立柱後再計算。');
+        }
+
+        const drawNums = parseNumbers(el.drawInput.value, config.totalBalls);
+        if (drawNums.length === 0) {
+          throw new Error('請先輸入開獎號碼。');
+        }
+        if (drawNums.length > config.drawBalls) {
+          throw new Error(`開獎號碼最多輸入 ${config.drawBalls} 支。`);
+        }
+
+        const p1 = currentPillars.p1;
+        const p2 = currentPillars.p2;
+        const p3 = currentPillars.p3;
+
+        const set1 = new Set(p1), set2 = new Set(p2), set3 = new Set(p3);
+        const x = drawNums.filter(n => set1.has(n)).length;
+        const y = drawNums.filter(n => set2.has(n)).length;
+        const z = drawNums.filter(n => set3.has(n)).length;
+
+        const a = p1.length, b = p2.length, c = p3.length;
+        const twoCombos = a * b + a * c + b * c;
+        const threeCombos = a * b * c;
+        const totalCost = twoCombos * TWO_STAR_COST_PER_BET * multiplier + threeCombos * THREE_STAR_COST_PER_BET * multiplier;
+
+        const hitTwo = x * y + x * z + y * z;
+        const hitThree = x * y * z;
+        const winTwo = hitTwo * config.twoStarPrize * multiplier;
+        const winThree = hitThree * THREE_STAR_PRIZE * multiplier;
+        const totalWin = winTwo + winThree;
+        const net = totalWin - totalCost;
+
+        el.hitP1.textContent = `${x} 支`;
+        el.hitP2.textContent = `${y} 支`;
+        el.hitP3.textContent = `${z} 支`;
+        el.hitTwoStar.textContent = `${formatMoney(hitTwo)} 組`;
+        el.hitThreeStar.textContent = `${formatMoney(hitThree)} 組`;
+        el.winTwoStar.textContent = formatMoney(winTwo);
+        el.winThreeStar.textContent = formatMoney(winThree);
+        el.totalWin.innerHTML = `<strong>${formatMoney(totalWin)}</strong>`;
+        el.netProfit.innerHTML = `<strong>${net >= 0 ? '' : '-'}${formatMoney(Math.abs(net))}</strong>`;
+        el.netProfit.className = net > 0 ? 'profit-positive' : net < 0 ? 'profit-negative' : 'profit-neutral';
+      } catch (err) {
+        showError(err.message || '發生未知錯誤。');
+      }
+    }
+
+    function saveMemory() {
+      clearError();
+      try {
+        if (!currentPillars) {
+          throw new Error('請先排列出立柱，再進行記憶。');
+        }
+        const payload = {
+          gameType: currentPillars.gameType,
+          excluded: currentPillars.excluded,
+          p1: currentPillars.p1,
+          p2: currentPillars.p2,
+          p3: currentPillars.p3,
+          savedAt: new Date().toLocaleString('zh-TW')
+        };
+        localStorage.setItem(MEMORY_KEY, JSON.stringify(payload));
+        refreshMemoryStatus('已成功記憶目前立柱號碼。');
+      } catch (err) {
+        showError(err.message || '記憶立柱時發生錯誤。');
+      }
+    }
+
+    function loadMemory() {
+      clearError();
+      try {
+        const raw = localStorage.getItem(MEMORY_KEY);
+        if (!raw) {
+          throw new Error('目前沒有記憶的立柱號碼可載入。');
+        }
+        const data = JSON.parse(raw);
+        el.gameType.value = data.gameType;
+        updateGameUi();
+
+        const config = getConfig();
+        const multiplier = Number(el.multiplier.value);
+        if (!validateMultiplier(multiplier)) {
+          throw new Error('下注倍數請輸入 0.1 ~ 1 之間的數字。');
+        }
+
+        const excludedText = (data.excluded || []).map(formatNumber2).join(' ');
+        el.excludeInput.value = excludedText;
+
+        const baseNumbers = getBaseNumbers(config.totalBalls);
+        const excluded = parseNumbers(el.excludeInput.value, config.totalBalls);
+        const remaining = baseNumbers.filter(n => !excluded.includes(n));
+
+        renderArrangement(config, excluded, remaining, data.p1 || [], data.p2 || [], data.p3 || [], multiplier);
+        refreshMemoryStatus(`已載入記憶立柱。記憶時間：${data.savedAt || '未記錄'}`);
+      } catch (err) {
+        showError(err.message || '載入記憶立柱時發生錯誤。');
+      }
+    }
+
+    function clearMemory() {
+      localStorage.removeItem(MEMORY_KEY);
+      refreshMemoryStatus('已清除記憶立柱。');
+    }
+
+    function refreshMemoryStatus(customText = '') {
+      if (customText) {
+        el.memoryStatus.textContent = customText;
+        return;
+      }
+      const raw = localStorage.getItem(MEMORY_KEY);
+      if (!raw) {
+        el.memoryStatus.textContent = '目前沒有記憶的立柱號碼。';
+        return;
+      }
+      try {
+        const data = JSON.parse(raw);
+        const gameLabel = GAME_CONFIG[data.gameType]?.label || '未知彩種';
+        el.memoryStatus.textContent = `已記憶：${gameLabel}；記憶時間：${data.savedAt || '未記錄'}`;
+      } catch {
+        el.memoryStatus.textContent = '記憶資料讀取失敗，可按清除記憶立柱重設。';
+      }
+    }
+
+    function clearAll() {
+      clearError();
+      el.excludeInput.value = '';
+      el.multiplier.value = '1';
+      el.drawInput.value = '';
+      shuffleSeed = 0;
+      currentPillars = null;
+      updateGameUi();
+
+      el.excludedCount.textContent = '0';
+      el.remainingCount.textContent = getConfig().totalBalls;
+      el.twoStarCombos.textContent = '0';
+      el.threeStarCombos.textContent = '0';
+      el.pillar1.innerHTML = '';
+      el.pillar2.innerHTML = '';
+      el.pillar3.innerHTML = '';
+      el.p1Count.textContent = '0 支';
+      el.p2Count.textContent = '0 支';
+      el.p3Count.textContent = '0 支';
+      el.p1Stats.textContent = '大小：0/0　單雙：0/0　頭數：-';
+      el.p2Stats.textContent = '大小：0/0　單雙：0/0　頭數：-';
+      el.p3Stats.textContent = '大小：0/0　單雙：0/0　頭數：-';
+      el.twoStarCostFormula.textContent = '二星總組數 × 71.8 × 倍數';
+      el.threeStarCostFormula.textContent = '三星總組數 × 62.5 × 倍數';
+      el.twoStarCost.textContent = '0';
+      el.threeStarCost.textContent = '0';
+      el.totalCost.innerHTML = '<strong>0</strong>';
+      el.twoStarPrizeFormula.textContent = '二星獎金 × 倍數';
+      el.twoStarPrize.textContent = '0';
+      el.threeStarPrize.textContent = '0';
+      resetDrawResults();
+    }
+
+    el.arrangeBtn.addEventListener('click', () => arrangePillars(false));
+    el.computeBtn.addEventListener('click', computeDrawResult);
+    el.saveBtn.addEventListener('click', saveMemory);
+    el.loadBtn.addEventListener('click', loadMemory);
+    el.reshuffleBtn.addEventListener('click', () => arrangePillars(true));
+    el.clearMemoryBtn.addEventListener('click', clearMemory);
+    el.clearBtn.addEventListener('click', clearAll);
+    el.gameType.addEventListener('change', () => {
+      currentPillars = null;
+      updateGameUi();
+      resetDrawResults();
+    });
+
+    updateGameUi();
+    clearAll();
+  </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+      });
+    }
+  </script>
+
+</body>
+</html>
