@@ -1,0 +1,327 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>鐵柱優化工具</title>
+  <style>
+    :root { --bg:#0b1220; --panel:#121a2b; --panel-2:#18233a; --text:#e8eefc; --muted:#a8b3cf; --good:#2ecc71; --bad:#ff6b6b; --border:#2a3550; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:linear-gradient(180deg,#09111d 0%,#0d1527 100%); color:var(--text); }
+    .wrap { max-width:1280px; margin:0 auto; padding:20px; }
+    h1,h2,h3 { margin:0 0 10px; }
+    p { color:var(--muted); line-height:1.5; }
+    .grid { display:grid; grid-template-columns:420px 1fr; gap:16px; }
+    .card { background:rgba(18,26,43,.95); border:1px solid var(--border); border-radius:18px; padding:16px; box-shadow:0 8px 30px rgba(0,0,0,.28); }
+    label { display:block; font-size:14px; margin-bottom:6px; color:var(--muted); }
+    input,select,textarea,button { width:100%; border-radius:12px; border:1px solid var(--border); background:var(--panel-2); color:var(--text); padding:10px 12px; font-size:15px; }
+    textarea { min-height:220px; resize:vertical; line-height:1.4; }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+    .row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:12px; }
+    .actions { display:flex; gap:10px; margin-top:10px; flex-wrap:wrap; }
+    .actions button { flex:1 1 180px; cursor:pointer; font-weight:700; }
+    .primary { background:#1f6feb; } .secondary { background:#20304b; } .danger { background:#662d37; }
+    .pill { display:inline-block; padding:5px 10px; border-radius:999px; background:#1b2942; border:1px solid var(--border); color:var(--muted); margin:4px 6px 0 0; font-size:13px; }
+    .result-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .nums { display:flex; flex-wrap:wrap; gap:8px; min-height:38px; margin-top:8px; }
+    .num { min-width:38px; text-align:center; padding:7px 10px; border-radius:10px; font-weight:700; border:1px solid var(--border); }
+    .c1 { background:rgba(52,152,219,.18); color:#9dd8ff; } .c2 { background:rgba(46,204,113,.18); color:#90f0b2; } .c3 { background:rgba(243,156,18,.18); color:#ffd08d; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th,td { border-bottom:1px solid var(--border); padding:8px; text-align:left; vertical-align:top; }
+    th { color:#cfe1ff; }
+    .good { color:var(--good); font-weight:700; } .bad { color:var(--bad); font-weight:700; }
+    .mono { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+    .small { font-size:13px; color:var(--muted); }
+    .log { white-space:pre-wrap; background:#0f1726; border:1px solid var(--border); border-radius:12px; padding:12px; font-size:13px; line-height:1.45; min-height:80px; }
+    @media (max-width:980px){ .grid,.result-grid { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card" style="margin-bottom:16px;">
+      <h1>鐵柱優化工具</h1>
+      <p>把近 100 期或更多期的開獎號碼貼上來，工具會依據回測結果自動找出最強單組立柱。支援 <strong>39 球 5 開</strong> 與 <strong>49 球 6 開</strong>。49 球版本可搭配排除號碼，再用剩餘球池做自訂柱型，例如 10-14-15。</p>
+      <div class="small">演算法：多起點隨機 + 局部交換爬山，目標優先最大化「至少三星/過關期數」，其次最大化 4 碰，再壓低全倒。</div>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <div class="row">
+          <div><label for="mode">玩法</label><select id="mode"><option value="f39">39 球版（加州天天樂 / 539 類）</option><option value="f49">49 球版（香港 / 大樂透類）</option></select></div>
+          <div><label for="drawCount">每期開出幾顆</label><input id="drawCount" type="number" min="1" max="10" value="5" /></div>
+        </div>
+        <div class="row">
+          <div><label for="totalBalls">總球數</label><input id="totalBalls" type="number" min="10" max="80" value="39" /></div>
+          <div><label for="iterations">優化強度（建議 2000~15000）</label><input id="iterations" type="number" min="100" max="100000" value="5000" /></div>
+        </div>
+        <div class="row3">
+          <div><label for="col1">第一柱</label><input id="col1" type="number" min="1" value="10" /></div>
+          <div><label for="col2">第二柱</label><input id="col2" type="number" min="1" value="14" /></div>
+          <div><label for="col3">第三柱</label><input id="col3" type="number" min="1" value="15" /></div>
+        </div>
+        <div><label for="exclude">排除號碼區（可空白；用空白、逗號都可以）</label><input id="exclude" placeholder="例如：01 05 09 14 22 33 41 44 47 49" /></div>
+        <div style="margin-top:12px;"><label for="draws">貼上歷史開獎號碼（每行一期）</label><textarea id="draws" placeholder="例如：
+04,14,15,23,29
+10,19,29,33,36
+..."></textarea></div>
+        <div class="actions"><button class="primary" id="runBtn">開始優化</button><button class="secondary" id="sampleBtn">載入 100 期示例</button><button class="danger" id="clearBtn">清空</button></div>
+        <div style="margin-top:12px;"><label>目前可用球池</label><div id="poolInfo" class="log"></div></div>
+      </div>
+      <div class="result-grid">
+        <div class="card">
+          <h2>最佳鐵柱結果</h2>
+          <div id="summary" class="log">尚未運算</div>
+          <h3 style="margin-top:14px;">柱型</h3>
+          <div><div class="pill">柱1</div><div id="col1Nums" class="nums"></div></div>
+          <div><div class="pill">柱2</div><div id="col2Nums" class="nums"></div></div>
+          <div><div class="pill">柱3</div><div id="col3Nums" class="nums"></div></div>
+        </div>
+        <div class="card">
+          <h2>驗證表</h2>
+          <div class="small" style="margin-bottom:10px;">柱分布格式：柱1-柱2-柱3。結果：至少三星 = 過，否則倒。</div>
+          <div style="max-height:720px; overflow:auto;">
+            <table>
+              <thead><tr><th>#</th><th>開獎號碼</th><th>對應柱位</th><th>柱分布</th><th>結果</th></tr></thead>
+              <tbody id="verifyBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<script>
+const sample100 = `04,14,15,23,29
+10,19,29,33,36
+10,15,31,35,38
+03,17,18,27,35
+01,03,04,13,17
+12,13,16,25,38
+06,07,30,32,33
+08,10,11,21,29
+10,13,24,32,38
+26,29,30,31,32
+03,09,10,20,27
+05,07,10,33,34
+03,04,14,31,33
+03,10,20,26,30
+03,24,25,34,37
+19,23,29,30,36
+10,19,22,31,36
+03,22,27,31,37
+06,08,14,22,28
+08,11,26,28,35
+01,03,15,17,21
+04,09,14,26,34
+02,13,20,28,30
+11,15,18,25,27
+14,18,23,27,29
+04,10,19,23,26
+04,05,12,26,32
+02,08,11,36,37
+18,20,24,29,33
+08,12,15,24,34
+05,11,26,28,39
+08,26,28,32,38
+09,11,25,26,29
+05,06,13,15,23
+01,08,23,24,36
+06,12,19,22,25
+02,14,18,20,35
+09,13,18,24,28
+02,04,08,17,21
+05,06,13,27,32
+01,04,22,33,39
+01,02,05,07,20
+01,14,19,27,37
+15,18,25,33,35
+11,14,15,20,36
+06,08,11,27,28
+13,14,18,26,32
+07,08,13,22,28
+11,19,22,27,30
+16,18,19,31,37
+08,18,28,33,39
+03,08,16,31,33
+06,18,28,32,36
+02,09,12,25,39
+04,09,25,27,35
+13,18,27,28,35
+07,16,17,19,35
+12,13,15,24,34
+23,25,28,29,35
+02,15,19,24,36
+02,03,09,11,31
+01,10,28,31,39
+05,09,15,21,24
+09,19,20,26,32
+01,04,34,37,39
+09,14,19,20,24
+13,14,24,25,35
+01,03,09,11,21
+10,12,22,28,37
+01,08,13,17,20
+01,21,22,33,35
+08,09,20,26,36
+02,06,07,08,35
+05,17,20,29,38
+07,11,18,28,30
+05,14,15,19,26
+01,14,16,18,19
+15,23,26,28,37
+11,28,29,32,37
+14,16,22,35,36
+02,06,11,18,31
+13,25,28,31,33
+14,15,24,32,34
+10,16,17,22,35
+10,14,18,31,32
+02,03,22,24,32
+16,18,27,32,38
+07,13,23,26,30
+01,02,05,10,17
+10,15,16,20,33
+07,31,33,35,38
+11,13,14,19,39
+09,11,12,13,34
+09,10,16,27,36
+16,21,30,33,34
+06,07,28,29,32
+06,16,18,20,33
+01,02,20,30,38
+02,05,08,24,33
+02,10,27,28,34`;
+const $ = (id) => document.getElementById(id);
+const pad2 = (n) => String(n).padStart(2, '0');
+function updateModeDefaults() {
+  const mode = $('mode').value;
+  if (mode === 'f39') { $('totalBalls').value = 39; $('drawCount').value = 5; $('col1').value = 10; $('col2').value = 14; $('col3').value = 15; }
+  else { $('totalBalls').value = 49; $('drawCount').value = 6; if (Number($('col1').value)+Number($('col2').value)+Number($('col3').value)!==39) { $('col1').value = 10; $('col2').value = 14; $('col3').value = 15; } }
+  refreshPoolInfo();
+}
+function parseNumbers(text) {
+  if (!text.trim()) return [];
+  const matches = text.match(/\d+/g) || [];
+  return [...new Set(matches.map(x => Number(x)).filter(x => Number.isInteger(x)))].sort((a,b)=>a-b);
+}
+function parseDraws(text, drawCount, totalBalls) {
+  const lines = text.split(/\n+/).map(s => s.trim()).filter(Boolean);
+  const draws = [];
+  for (let i=0;i<lines.length;i++) {
+    const nums = (lines[i].match(/\d+/g) || []).map(Number);
+    if (nums.length !== drawCount) throw new Error(`第 ${i+1} 行不是 ${drawCount} 顆號碼：${lines[i]}`);
+    const unique = [...new Set(nums)];
+    if (unique.length !== drawCount) throw new Error(`第 ${i+1} 行有重複號碼：${lines[i]}`);
+    if (unique.some(n => n < 1 || n > totalBalls)) throw new Error(`第 ${i+1} 行有超出範圍的號碼：${lines[i]}`);
+    draws.push(unique.sort((a,b)=>a-b));
+  }
+  return draws;
+}
+function refreshPoolInfo() {
+  const totalBalls = Number($('totalBalls').value);
+  const c1 = Number($('col1').value), c2 = Number($('col2').value), c3 = Number($('col3').value);
+  const excludes = parseNumbers($('exclude').value);
+  const excludedSet = new Set(excludes);
+  const pool = [];
+  for (let i=1;i<=totalBalls;i++) if (!excludedSet.has(i)) pool.push(i);
+  const target = c1+c2+c3;
+  const msg = [`總球數：${totalBalls}`, `排除：${excludes.length ? excludes.map(pad2).join(' ') : '無'}`, `剩餘球池：${pool.length} 顆`, `目標柱型總數：${target}`, pool.length===target ? '球池數量與柱型總數相符，可直接優化。' : `注意：剩餘球池 ${pool.length} 與柱型總數 ${target} 不相符。請調整排除數量或柱型。`, `可用號碼：${pool.map(pad2).join(' ')}`];
+  $('poolInfo').textContent = msg.join('\n');
+}
+function buildInitialPartition(pool, sizes) {
+  const shuffled = pool.slice().sort(() => Math.random() - 0.5);
+  const [a,b,c] = sizes;
+  return [shuffled.slice(0,a), shuffled.slice(a,a+b), shuffled.slice(a+b,a+b+c)];
+}
+function evaluatePartition(partition, draws) {
+  const map = new Map();
+  partition.forEach((col, idx) => col.forEach(n => map.set(n, idx)));
+  let hit3 = 0, hit4 = 0, fail = 0;
+  const rows = [];
+  for (let i=0;i<draws.length;i++) {
+    const draw = draws[i];
+    const counts = [0,0,0];
+    const mapping = [];
+    for (const n of draw) {
+      const col = map.get(n);
+      if (col === undefined) mapping.push(`${pad2(n)}→排除`);
+      else { counts[col] += 1; mapping.push(`${pad2(n)}→柱${col+1}`); }
+    }
+    const ok = counts.every(x => x > 0);
+    let type = '倒';
+    if (ok) { hit3 += 1; const sorted = counts.slice().sort((a,b)=>b-a).join('-'); if (sorted === '2-2-1') { hit4 += 1; type = '4碰'; } else type = '3碰'; }
+    else fail += 1;
+    rows.push({ index:i+1, draw, mapping, counts, ok, type });
+  }
+  return { hit3, hit4, fail, rows };
+}
+function scoreEval(ev) { return ev.hit3 * 1000000 + ev.hit4 * 1000 - ev.fail; }
+function partitionToKey(partition) { return partition.map(col => col.slice().sort((a,b)=>a-b).join(',')).join('|'); }
+function deepClonePartition(partition) { return partition.map(col => col.slice()); }
+function optimize(pool, draws, sizes, iterations) {
+  let bestPartition = null, bestEval = null, bestScore = -Infinity;
+  const restarts = Math.max(6, Math.min(40, Math.floor(iterations / 300)));
+  const localIters = Math.max(80, Math.floor(iterations / restarts));
+  const seen = new Set();
+  for (let r=0;r<restarts;r++) {
+    let cur = buildInitialPartition(pool, sizes);
+    let curEval = evaluatePartition(cur, draws);
+    let curScore = scoreEval(curEval);
+    for (let t=0;t<localIters;t++) {
+      const next = deepClonePartition(cur);
+      const a = Math.floor(Math.random() * 3);
+      let b = Math.floor(Math.random() * 3);
+      while (b === a) b = Math.floor(Math.random() * 3);
+      const ia = Math.floor(Math.random() * next[a].length);
+      const ib = Math.floor(Math.random() * next[b].length);
+      const tmp = next[a][ia]; next[a][ia] = next[b][ib]; next[b][ib] = tmp;
+      const key = partitionToKey(next);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const nextEval = evaluatePartition(next, draws);
+      const nextScore = scoreEval(nextEval);
+      const accept = nextScore >= curScore || Math.random() < 0.015;
+      if (accept) { cur = next; curEval = nextEval; curScore = nextScore; }
+      if (nextScore > bestScore) { bestPartition = deepClonePartition(next); bestEval = nextEval; bestScore = nextScore; }
+    }
+    if (curScore > bestScore) { bestPartition = deepClonePartition(cur); bestEval = curEval; bestScore = curScore; }
+  }
+  return { partition: bestPartition, eval: bestEval, score: bestScore };
+}
+function renderNums(el, nums, cls) { el.innerHTML = nums.slice().sort((a,b)=>a-b).map(n => `<span class="num ${cls}">${pad2(n)}</span>`).join(''); }
+function renderResult(result) {
+  const [p1,p2,p3] = result.partition;
+  renderNums($('col1Nums'), p1, 'c1'); renderNums($('col2Nums'), p2, 'c2'); renderNums($('col3Nums'), p3, 'c3');
+  $('summary').textContent = [`至少三星 / 過關：${result.eval.hit3} 期`, `4碰：${result.eval.hit4} 期`, `倒：${result.eval.fail} 期`, `總期數：${result.eval.rows.length} 期`, `過關率：${((result.eval.hit3 / result.eval.rows.length) * 100).toFixed(2)}%`, '', `柱1：${p1.slice().sort((a,b)=>a-b).map(pad2).join(' ')}`, `柱2：${p2.slice().sort((a,b)=>a-b).map(pad2).join(' ')}`, `柱3：${p3.slice().sort((a,b)=>a-b).map(pad2).join(' ')}`].join('\n');
+  $('verifyBody').innerHTML = result.eval.rows.map(row => { const dist = row.counts.join('-'); const resultHtml = row.ok ? `<span class="good">${row.type}</span>` : `<span class="bad">倒</span>`; return `<tr><td>${row.index}</td><td class="mono">${row.draw.map(pad2).join(' ')}</td><td class="small">${row.mapping.join('、')}</td><td class="mono">${dist}</td><td>${resultHtml}</td></tr>`; }).join('');
+}
+function runOptimize() {
+  try {
+    refreshPoolInfo();
+    const totalBalls = Number($('totalBalls').value);
+    const drawCount = Number($('drawCount').value);
+    const sizes = [Number($('col1').value), Number($('col2').value), Number($('col3').value)];
+    const iterations = Number($('iterations').value);
+    const excludes = parseNumbers($('exclude').value);
+    const excludedSet = new Set(excludes);
+    const pool = [];
+    for (let i=1;i<=totalBalls;i++) if (!excludedSet.has(i)) pool.push(i);
+    const target = sizes.reduce((a,b)=>a+b,0);
+    if (pool.length !== target) throw new Error(`剩餘球池 ${pool.length} 顆，與柱型總數 ${target} 不相符。請調整排除號碼或柱型。`);
+    const draws = parseDraws($('draws').value, drawCount, totalBalls);
+    if (!draws.length) throw new Error('請先貼上歷史開獎號碼。');
+    const badLine = draws.findIndex(draw => draw.some(n => excludedSet.has(n)));
+    if (badLine >= 0) throw new Error(`第 ${badLine+1} 期開獎號中包含排除號碼。排除區是給你建立球池用的，不該把實際開出的號碼從世界中刪掉。請重新確認玩法設定。`);
+    $('summary').textContent = '運算中，請稍候...';
+    $('verifyBody').innerHTML = '';
+    setTimeout(() => { const result = optimize(pool, draws, sizes, iterations); renderResult(result); }, 30);
+  } catch (err) { $('summary').textContent = `錯誤：${err.message}`; $('verifyBody').innerHTML = ''; }
+}
+$('mode').addEventListener('change', updateModeDefaults);
+['totalBalls','drawCount','col1','col2','col3','exclude'].forEach(id => $(id).addEventListener('input', refreshPoolInfo));
+$('runBtn').addEventListener('click', runOptimize);
+$('sampleBtn').addEventListener('click', () => { $('mode').value = 'f39'; updateModeDefaults(); $('draws').value = sample100; });
+$('clearBtn').addEventListener('click', () => { $('draws').value = ''; $('exclude').value = ''; $('summary').textContent = '尚未運算'; $('verifyBody').innerHTML = ''; $('col1Nums').innerHTML = ''; $('col2Nums').innerHTML = ''; $('col3Nums').innerHTML = ''; refreshPoolInfo(); });
+updateModeDefaults();
+</script>
+</body>
+</html>
