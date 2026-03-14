@@ -6,10 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>鐵柱優化工具</title>
   <style>
-    :root { --bg:#0b1220; --panel:#121a2b; --panel-2:#18233a; --text:#e8eefc; --muted:#a8b3cf; --good:#2ecc71; --bad:#ff6b6b; --border:#2a3550; }
+    :root { --bg:#0b1220; --panel:#121a2b; --panel-2:#18233a; --text:#e8eefc; --muted:#a8b3cf; --good:#2ecc71; --bad:#ff6b6b; --border:#2a3550; --warn:#f1c40f; }
     * { box-sizing: border-box; }
     body { margin:0; font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:linear-gradient(180deg,#09111d 0%,#0d1527 100%); color:var(--text); }
-    .wrap { max-width:1280px; margin:0 auto; padding:20px; }
+    .wrap { max-width:1520px; margin:0 auto; padding:20px; }
     h1,h2,h3 { margin:0 0 10px; }
     p { color:var(--muted); line-height:1.5; }
     .grid { display:grid; grid-template-columns:420px 1fr; gap:16px; }
@@ -23,18 +23,22 @@
     .actions button { flex:1 1 180px; cursor:pointer; font-weight:700; }
     .primary { background:#1f6feb; } .secondary { background:#20304b; } .danger { background:#662d37; }
     .pill { display:inline-block; padding:5px 10px; border-radius:999px; background:#1b2942; border:1px solid var(--border); color:var(--muted); margin:4px 6px 0 0; font-size:13px; }
-    .result-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .result-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; }
     .nums { display:flex; flex-wrap:wrap; gap:8px; min-height:38px; margin-top:8px; }
     .num { min-width:38px; text-align:center; padding:7px 10px; border-radius:10px; font-weight:700; border:1px solid var(--border); }
     .c1 { background:rgba(52,152,219,.18); color:#9dd8ff; } .c2 { background:rgba(46,204,113,.18); color:#90f0b2; } .c3 { background:rgba(243,156,18,.18); color:#ffd08d; }
     table { width:100%; border-collapse:collapse; font-size:14px; }
     th,td { border-bottom:1px solid var(--border); padding:8px; text-align:left; vertical-align:top; }
     th { color:#cfe1ff; }
-    .good { color:var(--good); font-weight:700; } .bad { color:var(--bad); font-weight:700; }
+    .good { color:var(--good); font-weight:700; } .bad { color:var(--bad); font-weight:700; } .warn { color:var(--warn); font-weight:700; }
     .mono { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
     .small { font-size:13px; color:var(--muted); }
     .log { white-space:pre-wrap; background:#0f1726; border:1px solid var(--border); border-radius:12px; padding:12px; font-size:13px; line-height:1.45; min-height:80px; }
-    @media (max-width:980px){ .grid,.result-grid { grid-template-columns:1fr; } }
+    .subgrid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .candidate-box { border:1px solid var(--border); border-radius:14px; padding:12px; margin-top:10px; background:#0f1726; }
+    .candidate-box h4 { margin:0 0 8px; font-size:15px; }
+    .table-wrap { max-height:720px; overflow:auto; }
+    @media (max-width:1200px){ .grid,.result-grid,.subgrid { grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
@@ -42,7 +46,7 @@
     <div class="card" style="margin-bottom:16px;">
       <h1>鐵柱優化工具</h1>
       <p>把近 100 期或更多期的開獎號碼貼上來，工具會依據回測結果自動找出最強單組立柱。支援 <strong>39 球 5 開</strong> 與 <strong>49 球 6 開</strong>。49 球版本可搭配排除號碼，再用剩餘球池做自訂柱型，例如 10-14-15。</p>
-      <div class="small">演算法：多起點隨機 + 局部交換爬山，目標優先最大化「至少三星/過關期數」，其次最大化 4 碰，再壓低全倒。</div>
+      <div class="small">新增：除了原本的整體最佳過關率外，現在也會同時找出「從最新一期開始往前連勝最長的柱」以及「最新一期剛倒，但倒前連勝最長的柱」。若分數完全相同，會一併列出多組候選。</div>
     </div>
     <div class="grid">
       <div class="card">
@@ -52,7 +56,7 @@
         </div>
         <div class="row">
           <div><label for="totalBalls">總球數</label><input id="totalBalls" type="number" min="10" max="80" value="39" /></div>
-          <div><label for="iterations">優化強度（建議 2000~15000）</label><input id="iterations" type="number" min="100" max="100000" value="5000" /></div>
+          <div><label for="iterations">優化強度（建議 4000~30000）</label><input id="iterations" type="number" min="100" max="100000" value="8000" /></div>
         </div>
         <div class="row3">
           <div><label for="col1">第一柱</label><input id="col1" type="number" min="1" value="10" /></div>
@@ -67,23 +71,156 @@
         <div class="actions"><button class="primary" id="runBtn">開始優化</button><button class="secondary" id="sampleBtn">載入 100 期示例</button><button class="danger" id="clearBtn">清空</button></div>
         <div style="margin-top:12px;"><label>目前可用球池</label><div id="poolInfo" class="log"></div></div>
       </div>
-      <div class="result-grid">
-        <div class="card">
-          <h2>最佳鐵柱結果</h2>
-          <div id="summary" class="log">尚未運算</div>
-          <h3 style="margin-top:14px;">柱型</h3>
-          <div><div class="pill">柱1</div><div id="col1Nums" class="nums"></div></div>
-          <div><div class="pill">柱2</div><div id="col2Nums" class="nums"></div></div>
-          <div><div class="pill">柱3</div><div id="col3Nums" class="nums"></div></div>
+      <div>
+        <div class="result-grid">
+          <div class="card">
+            <h2>整體最佳過關率</h2>
+            <div id="summaryOverall" class="log">尚未運算</div>
+            <div id="overallCandidates"></div>
+          </div>
+          <div class="card">
+            <h2>最新往前連勝最長柱</h2>
+            <div id="summaryStreak" class="log">尚未運算</div>
+            <div id="streakCandidates"></div>
+          </div>
+          <div class="card">
+            <h2>最新一期剛倒前最長連勝柱</h2>
+            <div id="summaryBroken" class="log">尚未運算</div>
+            <div id="brokenCandidates"></div>
+          </div>
         </div>
-        <div class="card">
-          <h2>驗證表</h2>
-          <div class="small" style="margin-bottom:10px;">柱分布格式：柱1-柱2-柱3。結果：至少三星 = 過，否則倒。</div>
-          <div style="max-height:720px; overflow:auto;">
-            <table>
-              <thead><tr><th>#</th><th>開獎號碼</th><th>對應柱位</th><th>柱分布</th><th>結果</th></tr></thead>
-              <tbody id="verifyBody"></tbody>
-            </table>
+        <div class="subgrid" style="margin-top:16px;">
+          <div class="card">
+            <h2>整體最佳過關率驗證</h2>
+            <div class="small">點上方「整體最佳過關率」候選，可切換這一區的柱型、驗證表與語音。</div>
+            <div><div class="pill">柱1</div><div id="overallCol1Nums" class="nums"></div></div>
+            <div><div class="pill">柱2</div><div id="overallCol2Nums" class="nums"></div></div>
+            <div><div class="pill">柱3</div><div id="overallCol3Nums" class="nums"></div></div>
+            <div style="margin-top:14px; border-top:1px solid var(--border); padding-top:14px;">
+              <h3 style="margin-bottom:8px;">語音播放</h3>
+              <div class="row">
+                <div>
+                  <label for="overallVoiceRate">播放速度</label>
+                  <select id="overallVoiceRate">
+                    <option value="0.75">慢速下注</option>
+                    <option value="0.95" selected>標準</option>
+                    <option value="1.15">快速確認</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="overallVoiceGap">每個號碼停頓</label>
+                  <select id="overallVoiceGap">
+                    <option value="450">慢</option>
+                    <option value="250" selected>中</option>
+                    <option value="120">快</option>
+                  </select>
+                </div>
+              </div>
+              <div class="actions">
+                <button class="primary" id="overallSpeakAllBtn">🔊 播放三柱</button>
+                <button class="secondary" id="overallSpeakCol1Btn">播放柱1</button>
+                <button class="secondary" id="overallSpeakCol2Btn">播放柱2</button>
+                <button class="secondary" id="overallSpeakCol3Btn">播放柱3</button>
+                <button class="danger" id="overallStopSpeakBtn">停止播放</button>
+              </div>
+              <div id="overallVoiceStatus" class="small" style="margin-top:10px;">尚未播放</div>
+            </div>
+            <h3 style="margin-top:16px;">驗證表</h3>
+            <div class="small" style="margin-bottom:10px;">柱分布格式：柱1-柱2-柱3。結果：至少三星 = 過，否則倒。最上面第 1 列為最新一期。</div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>#</th><th>開獎號碼</th><th>對應柱位</th><th>柱分布</th><th>結果</th></tr></thead>
+                <tbody id="overallVerifyBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <h2>最新往前最長連勝驗證</h2>
+            <div class="small">點上方「最新往前連勝最長柱」候選，可切換這一區的柱型、驗證表與語音。</div>
+            <div><div class="pill">柱1</div><div id="streakCol1Nums" class="nums"></div></div>
+            <div><div class="pill">柱2</div><div id="streakCol2Nums" class="nums"></div></div>
+            <div><div class="pill">柱3</div><div id="streakCol3Nums" class="nums"></div></div>
+            <div style="margin-top:14px; border-top:1px solid var(--border); padding-top:14px;">
+              <h3 style="margin-bottom:8px;">語音播放</h3>
+              <div class="row">
+                <div>
+                  <label for="streakVoiceRate">播放速度</label>
+                  <select id="streakVoiceRate">
+                    <option value="0.75">慢速下注</option>
+                    <option value="0.95" selected>標準</option>
+                    <option value="1.15">快速確認</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="streakVoiceGap">每個號碼停頓</label>
+                  <select id="streakVoiceGap">
+                    <option value="450">慢</option>
+                    <option value="250" selected>中</option>
+                    <option value="120">快</option>
+                  </select>
+                </div>
+              </div>
+              <div class="actions">
+                <button class="primary" id="streakSpeakAllBtn">🔊 播放三柱</button>
+                <button class="secondary" id="streakSpeakCol1Btn">播放柱1</button>
+                <button class="secondary" id="streakSpeakCol2Btn">播放柱2</button>
+                <button class="secondary" id="streakSpeakCol3Btn">播放柱3</button>
+                <button class="danger" id="streakStopSpeakBtn">停止播放</button>
+              </div>
+              <div id="streakVoiceStatus" class="small" style="margin-top:10px;">尚未播放</div>
+            </div>
+            <h3 style="margin-top:16px;">驗證表</h3>
+            <div class="small" style="margin-bottom:10px;">柱分布格式：柱1-柱2-柱3。結果：至少三星 = 過，否則倒。最上面第 1 列為最新一期。</div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>#</th><th>開獎號碼</th><th>對應柱位</th><th>柱分布</th><th>結果</th></tr></thead>
+                <tbody id="streakVerifyBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <h2>最新一期剛倒前最長連勝驗證</h2>
+            <div class="small">點上方「最新一期剛倒前最長連勝柱」候選，可切換這一區的柱型、驗證表與語音。</div>
+            <div><div class="pill">柱1</div><div id="brokenCol1Nums" class="nums"></div></div>
+            <div><div class="pill">柱2</div><div id="brokenCol2Nums" class="nums"></div></div>
+            <div><div class="pill">柱3</div><div id="brokenCol3Nums" class="nums"></div></div>
+            <div style="margin-top:14px; border-top:1px solid var(--border); padding-top:14px;">
+              <h3 style="margin-bottom:8px;">語音播放</h3>
+              <div class="row">
+                <div>
+                  <label for="brokenVoiceRate">播放速度</label>
+                  <select id="brokenVoiceRate">
+                    <option value="0.75">慢速下注</option>
+                    <option value="0.95" selected>標準</option>
+                    <option value="1.15">快速確認</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="brokenVoiceGap">每個號碼停頓</label>
+                  <select id="brokenVoiceGap">
+                    <option value="450">慢</option>
+                    <option value="250" selected>中</option>
+                    <option value="120">快</option>
+                  </select>
+                </div>
+              </div>
+              <div class="actions">
+                <button class="primary" id="brokenSpeakAllBtn">🔊 播放三柱</button>
+                <button class="secondary" id="brokenSpeakCol1Btn">播放柱1</button>
+                <button class="secondary" id="brokenSpeakCol2Btn">播放柱2</button>
+                <button class="secondary" id="brokenSpeakCol3Btn">播放柱3</button>
+                <button class="danger" id="brokenStopSpeakBtn">停止播放</button>
+              </div>
+              <div id="brokenVoiceStatus" class="small" style="margin-top:10px;">尚未播放</div>
+            </div>
+            <h3 style="margin-top:16px;">驗證表</h3>
+            <div class="small" style="margin-bottom:10px;">柱分布格式：柱1-柱2-柱3。結果：至少三星 = 過，否則倒。最上面第 1 列為最新一期。</div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>#</th><th>開獎號碼</th><th>對應柱位</th><th>柱分布</th><th>結果</th></tr></thead>
+                <tbody id="brokenVerifyBody"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -192,10 +329,21 @@ const sample100 = `04,14,15,23,29
 02,10,27,28,34`;
 const $ = (id) => document.getElementById(id);
 const pad2 = (n) => String(n).padStart(2, '0');
+let speechTimer = null;
+let currentSpeechGroup = '';
+let activeGroupResults = { overall:null, streak:null, broken:null };
+let lastResults = { overallCandidates:[], streakCandidates:[], brokenCandidates:[] };
+
 function updateModeDefaults() {
   const mode = $('mode').value;
-  if (mode === 'f39') { $('totalBalls').value = 39; $('drawCount').value = 5; $('col1').value = 10; $('col2').value = 14; $('col3').value = 15; }
-  else { $('totalBalls').value = 49; $('drawCount').value = 6; if (Number($('col1').value)+Number($('col2').value)+Number($('col3').value)!==39) { $('col1').value = 10; $('col2').value = 14; $('col3').value = 15; } }
+  if (mode === 'f39') {
+    $('totalBalls').value = 39; $('drawCount').value = 5; $('col1').value = 10; $('col2').value = 14; $('col3').value = 15;
+  } else {
+    $('totalBalls').value = 49; $('drawCount').value = 6;
+    if (Number($('col1').value)+Number($('col2').value)+Number($('col3').value)!==39) {
+      $('col1').value = 10; $('col2').value = 14; $('col3').value = 15;
+    }
+  }
   refreshPoolInfo();
 }
 function parseNumbers(text) {
@@ -224,11 +372,26 @@ function refreshPoolInfo() {
   const pool = [];
   for (let i=1;i<=totalBalls;i++) if (!excludedSet.has(i)) pool.push(i);
   const target = c1+c2+c3;
-  const msg = [`總球數：${totalBalls}`, `排除：${excludes.length ? excludes.map(pad2).join(' ') : '無'}`, `剩餘球池：${pool.length} 顆`, `目標柱型總數：${target}`, pool.length===target ? '球池數量與柱型總數相符，可直接優化。' : `注意：剩餘球池 ${pool.length} 與柱型總數 ${target} 不相符。請調整排除數量或柱型。`, `可用號碼：${pool.map(pad2).join(' ')}`];
+  const msg = [
+    `總球數：${totalBalls}`,
+    `排除：${excludes.length ? excludes.map(pad2).join(' ') : '無'}`,
+    `剩餘球池：${pool.length} 顆`,
+    `目標柱型總數：${target}`,
+    pool.length===target ? '球池數量與柱型總數相符，可直接優化。' : `注意：剩餘球池 ${pool.length} 與柱型總數 ${target} 不相符。請調整排除數量或柱型。`,
+    `可用號碼：${pool.map(pad2).join(' ')}`
+  ];
   $('poolInfo').textContent = msg.join('\n');
 }
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i=a.length-1;i>0;i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 function buildInitialPartition(pool, sizes) {
-  const shuffled = pool.slice().sort(() => Math.random() - 0.5);
+  const shuffled = shuffle(pool);
   const [a,b,c] = sizes;
   return [shuffled.slice(0,a), shuffled.slice(a,a+b), shuffled.slice(a+b,a+b+c)];
 }
@@ -237,6 +400,8 @@ function evaluatePartition(partition, draws) {
   partition.forEach((col, idx) => col.forEach(n => map.set(n, idx)));
   let hit3 = 0, hit4 = 0, fail = 0;
   const rows = [];
+  const streaks = [];
+  let curStart = -1, curLen = 0;
   for (let i=0;i<draws.length;i++) {
     const draw = draws[i];
     const counts = [0,0,0];
@@ -248,24 +413,105 @@ function evaluatePartition(partition, draws) {
     }
     const ok = counts.every(x => x > 0);
     let type = '倒';
-    if (ok) { hit3 += 1; const sorted = counts.slice().sort((a,b)=>b-a).join('-'); if (sorted === '2-2-1') { hit4 += 1; type = '4碰'; } else type = '3碰'; }
-    else fail += 1;
+    if (ok) {
+      hit3 += 1;
+      const sorted = counts.slice().sort((a,b)=>b-a).join('-');
+      if (sorted === '2-2-1') { hit4 += 1; type = '4碰'; } else type = '3碰';
+      if (curLen === 0) curStart = i;
+      curLen += 1;
+    } else {
+      fail += 1;
+      if (curLen > 0) {
+        streaks.push({ start: curStart, end: i-1, len: curLen });
+        curLen = 0;
+        curStart = -1;
+      }
+    }
     rows.push({ index:i+1, draw, mapping, counts, ok, type });
   }
-  return { hit3, hit4, fail, rows };
+  if (curLen > 0) streaks.push({ start: curStart, end: rows.length-1, len: curLen });
+
+  let longest = { len:0, start:-1, end:-1 };
+  for (const st of streaks) {
+    if (st.len > longest.len || (st.len === longest.len && st.start < longest.start)) longest = st;
+  }
+
+  let latestBroken = { eligible:false, len:0, start:-1, end:-1 };
+  if (rows.length && !rows[0].ok) {
+    let j = 1;
+    while (j < rows.length && rows[j].ok) j++;
+    const len = j - 1;
+    latestBroken = { eligible:true, len, start: len ? 1 : -1, end: len ? j-1 : -1 };
+  }
+
+  const latestWinStreak = rows.length && rows[0].ok ? leadingWins(rows) : 0;
+  return { hit3, hit4, fail, rows, streaks, longest, latestBroken, latestWinStreak };
+}
+function leadingWins(rows) {
+  let len = 0;
+  for (let i=0;i<rows.length;i++) {
+    if (!rows[i].ok) break;
+    len++;
+  }
+  return len;
 }
 function scoreEval(ev) { return ev.hit3 * 1000000 + ev.hit4 * 1000 - ev.fail; }
 function partitionToKey(partition) { return partition.map(col => col.slice().sort((a,b)=>a-b).join(',')).join('|'); }
 function deepClonePartition(partition) { return partition.map(col => col.slice()); }
-function optimize(pool, draws, sizes, iterations) {
-  let bestPartition = null, bestEval = null, bestScore = -Infinity;
-  const restarts = Math.max(6, Math.min(40, Math.floor(iterations / 300)));
-  const localIters = Math.max(80, Math.floor(iterations / restarts));
+
+function cmpMetrics(a, b) {
+  for (let i=0;i<Math.max(a.length,b.length);i++) {
+    const av = a[i] ?? 0, bv = b[i] ?? 0;
+    if (av > bv) return 1;
+    if (av < bv) return -1;
+  }
+  return 0;
+}
+function addCandidate(store, result, metricKey, limit=8) {
+  const metrics = metricKey(result.eval);
+  if (store.bestMetrics === null || cmpMetrics(metrics, store.bestMetrics) > 0) {
+    store.bestMetrics = metrics;
+    store.items = [{ key: partitionToKey(result.partition), result }];
+    return;
+  }
+  if (cmpMetrics(metrics, store.bestMetrics) === 0) {
+    const key = partitionToKey(result.partition);
+    if (!store.items.some(item => item.key === key) && store.items.length < limit) {
+      store.items.push({ key, result });
+    }
+  }
+}
+
+function optimizeMultiObjective(pool, draws, sizes, iterations) {
+  let overallBest = null, overallBestEval = null, overallBestScore = -Infinity;
+  const restarts = Math.max(10, Math.min(60, Math.floor(iterations / 250)));
+  const localIters = Math.max(100, Math.floor(iterations / restarts));
   const seen = new Set();
+
+  const stores = {
+    overall: { bestMetrics:null, items:[] },
+    streak: { bestMetrics:null, items:[] },
+    broken: { bestMetrics:null, items:[] }
+  };
+
+  function consider(partition, ev) {
+    const result = { partition: deepClonePartition(partition), eval: ev, score: scoreEval(ev) };
+    if (result.score > overallBestScore) {
+      overallBest = deepClonePartition(partition);
+      overallBestEval = ev;
+      overallBestScore = result.score;
+    }
+    addCandidate(stores.overall, result, e => [e.hit3, e.hit4, -e.fail, e.longest.len, e.latestBroken.len]);
+    addCandidate(stores.streak, result, e => [e.latestWinStreak, e.hit3, e.hit4, -e.fail, e.longest.len]);
+    if (ev.latestBroken.eligible) addCandidate(stores.broken, result, e => [e.latestBroken.len, e.hit3, e.hit4, -e.fail]);
+  }
+
   for (let r=0;r<restarts;r++) {
     let cur = buildInitialPartition(pool, sizes);
     let curEval = evaluatePartition(cur, draws);
     let curScore = scoreEval(curEval);
+    consider(cur, curEval);
+
     for (let t=0;t<localIters;t++) {
       const next = deepClonePartition(cur);
       const a = Math.floor(Math.random() * 3);
@@ -273,27 +519,176 @@ function optimize(pool, draws, sizes, iterations) {
       while (b === a) b = Math.floor(Math.random() * 3);
       const ia = Math.floor(Math.random() * next[a].length);
       const ib = Math.floor(Math.random() * next[b].length);
-      const tmp = next[a][ia]; next[a][ia] = next[b][ib]; next[b][ib] = tmp;
+      [next[a][ia], next[b][ib]] = [next[b][ib], next[a][ia]];
       const key = partitionToKey(next);
       if (seen.has(key)) continue;
       seen.add(key);
       const nextEval = evaluatePartition(next, draws);
       const nextScore = scoreEval(nextEval);
-      const accept = nextScore >= curScore || Math.random() < 0.015;
+      const accept = nextScore >= curScore || Math.random() < 0.02;
       if (accept) { cur = next; curEval = nextEval; curScore = nextScore; }
-      if (nextScore > bestScore) { bestPartition = deepClonePartition(next); bestEval = nextEval; bestScore = nextScore; }
+      consider(next, nextEval);
     }
-    if (curScore > bestScore) { bestPartition = deepClonePartition(cur); bestEval = curEval; bestScore = curScore; }
   }
-  return { partition: bestPartition, eval: bestEval, score: bestScore };
+
+  return {
+    best: { partition: overallBest, eval: overallBestEval, score: overallBestScore },
+    overallTies: stores.overall.items.map(x => x.result),
+    streakTies: stores.streak.items.map(x => x.result),
+    brokenTies: stores.broken.items.map(x => x.result)
+  };
 }
-function renderNums(el, nums, cls) { el.innerHTML = nums.slice().sort((a,b)=>a-b).map(n => `<span class="num ${cls}">${pad2(n)}</span>`).join(''); }
-function renderResult(result) {
+
+function renderNums(el, nums, cls) {
+  el.innerHTML = nums.slice().sort((a,b)=>a-b).map(n => `<span class="num ${cls}">${pad2(n)}</span>`).join('');
+}
+function buildSummaryLines(result, mode) {
   const [p1,p2,p3] = result.partition;
-  renderNums($('col1Nums'), p1, 'c1'); renderNums($('col2Nums'), p2, 'c2'); renderNums($('col3Nums'), p3, 'c3');
-  $('summary').textContent = [`至少三星 / 過關：${result.eval.hit3} 期`, `4碰：${result.eval.hit4} 期`, `倒：${result.eval.fail} 期`, `總期數：${result.eval.rows.length} 期`, `過關率：${((result.eval.hit3 / result.eval.rows.length) * 100).toFixed(2)}%`, '', `柱1：${p1.slice().sort((a,b)=>a-b).map(pad2).join(' ')}`, `柱2：${p2.slice().sort((a,b)=>a-b).map(pad2).join(' ')}`, `柱3：${p3.slice().sort((a,b)=>a-b).map(pad2).join(' ')}`].join('\n');
-  $('verifyBody').innerHTML = result.eval.rows.map(row => { const dist = row.counts.join('-'); const resultHtml = row.ok ? `<span class="good">${row.type}</span>` : `<span class="bad">倒</span>`; return `<tr><td>${row.index}</td><td class="mono">${row.draw.map(pad2).join(' ')}</td><td class="small">${row.mapping.join('、')}</td><td class="mono">${dist}</td><td>${resultHtml}</td></tr>`; }).join('');
+  const ev = result.eval;
+  const longestText = ev.longest.len > 0 ? `第 ${ev.longest.start+1} ~ ${ev.longest.end+1} 期，連勝 ${ev.longest.len} 期` : '無';
+  const latestForwardText = ev.latestWinStreak > 0 ? `從最新一期起連勝 ${ev.latestWinStreak} 期` : '最新一期未過關';
+  const brokenText = ev.latestBroken.eligible
+    ? (ev.latestBroken.len > 0 ? `最新一期倒；倒前第 ${ev.latestBroken.start+1} ~ ${ev.latestBroken.end+1} 期連勝 ${ev.latestBroken.len} 期` : '最新一期倒，但前一期前沒有連勝')
+    : '最新一期未倒，不符合此條件';
+  return [
+    `模式：${mode}`,
+    `至少三星 / 過關：${ev.hit3} 期`,
+    `4碰：${ev.hit4} 期`,
+    `倒：${ev.fail} 期`,
+    `總期數：${ev.rows.length} 期`,
+    `過關率：${ev.rows.length ? ((ev.hit3 / ev.rows.length) * 100).toFixed(2) : '0.00'}%`,
+    `從最新一期往前連勝：${latestForwardText}`,
+    `歷史區間最長連勝：${longestText}`,
+    `最新一期狀態：${brokenText}`,
+    '',
+    `柱1：${p1.slice().sort((a,b)=>a-b).map(pad2).join(' ')}`,
+    `柱2：${p2.slice().sort((a,b)=>a-b).map(pad2).join(' ')}`,
+    `柱3：${p3.slice().sort((a,b)=>a-b).map(pad2).join(' ')}`
+  ];
 }
+function renderVerifyTable(result, verifyBodyId) {
+  $(verifyBodyId).innerHTML = result.eval.rows.map((row, idx) => {
+    const dist = row.counts.join('-');
+    const resultHtml = row.ok ? `<span class="good">${row.type}</span>` : (idx === 0 ? `<span class="warn">最新倒</span>` : `<span class="bad">倒</span>`);
+    return `<tr><td>${row.index}</td><td class="mono">${row.draw.map(pad2).join(' ')}</td><td class="small">${row.mapping.join('、')}</td><td class="mono">${dist}</td><td>${resultHtml}</td></tr>`;
+  }).join('');
+}
+function renderGroupResult(groupKey, result) {
+  if (!result) return;
+  activeGroupResults[groupKey] = result;
+  const prefix = groupKey;
+  const [p1,p2,p3] = result.partition;
+  renderNums($(prefix + 'Col1Nums'), p1, 'c1');
+  renderNums($(prefix + 'Col2Nums'), p2, 'c2');
+  renderNums($(prefix + 'Col3Nums'), p3, 'c3');
+  renderVerifyTable(result, prefix + 'VerifyBody');
+  $(prefix + 'VoiceStatus').textContent = '已載入這組柱型，可直接播放語音。';
+}
+function stopSpeech(groupKey) {
+  if (speechTimer) { clearTimeout(speechTimer); speechTimer = null; }
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  if (groupKey && $(groupKey + 'VoiceStatus')) $(groupKey + 'VoiceStatus').textContent = '已停止播放';
+  currentSpeechGroup = '';
+}
+function buildSpeakChunks(nums, title) {
+  const chunks = [title];
+  nums.slice().sort((a,b)=>a-b).forEach(n => {
+    chunks.push(pad2(n));
+    chunks.push(' ');
+  });
+  return chunks;
+}
+function speakSequence(groupKey, chunks, doneText) {
+  stopSpeech(currentSpeechGroup || groupKey);
+  if (!window.speechSynthesis) {
+    $(groupKey + 'VoiceStatus').textContent = '目前瀏覽器不支援語音播放';
+    return;
+  }
+  currentSpeechGroup = groupKey;
+  const rate = Number($(groupKey + 'VoiceRate').value || 0.95);
+  const gap = Number($(groupKey + 'VoiceGap').value || 250);
+  let i = 0;
+  function next() {
+    if (i >= chunks.length) {
+      $(groupKey + 'VoiceStatus').textContent = doneText;
+      speechTimer = null;
+      currentSpeechGroup = '';
+      return;
+    }
+    const msg = new SpeechSynthesisUtterance(chunks[i]);
+    msg.lang = 'zh-TW';
+    msg.rate = rate;
+    msg.onend = () => {
+      speechTimer = setTimeout(() => { i += 1; next(); }, gap);
+    };
+    msg.onerror = () => {
+      $(groupKey + 'VoiceStatus').textContent = '語音播放失敗，請再按一次播放';
+      speechTimer = null;
+      currentSpeechGroup = '';
+    };
+    window.speechSynthesis.speak(msg);
+  }
+  next();
+}
+function speakCurrentColumn(groupKey, index) {
+  const result = activeGroupResults[groupKey];
+  if (!result) {
+    $(groupKey + 'VoiceStatus').textContent = '請先完成優化並顯示這一組柱型';
+    return;
+  }
+  const nums = result.partition[index];
+  const label = `正在播放柱${index+1}`;
+  $(groupKey + 'VoiceStatus').textContent = `${label}...`;
+  const chunks = buildSpeakChunks(nums, `第 ${index+1} 柱`);
+  speakSequence(groupKey, chunks, `${label} 完成`);
+}
+function speakAllColumns(groupKey) {
+  const result = activeGroupResults[groupKey];
+  if (!result) {
+    $(groupKey + 'VoiceStatus').textContent = '請先完成優化並顯示這一組柱型';
+    return;
+  }
+  const chunks = [];
+  result.partition.forEach((nums, idx) => {
+    chunks.push(`第 ${idx+1} 柱`);
+    nums.slice().sort((a,b)=>a-b).forEach(n => {
+      chunks.push(pad2(n));
+      chunks.push(' ');
+    });
+  });
+  $(groupKey + 'VoiceStatus').textContent = '正在播放三柱...';
+  speakSequence(groupKey, chunks, '三柱播放完成');
+}
+
+function renderCandidateList(containerId, titlePrefix, results, summaryId, emptyMessage) {
+  const container = $(containerId);
+  if (!results.length) {
+    container.innerHTML = `<div class="candidate-box small">${emptyMessage}</div>`;
+    return;
+  }
+  container.innerHTML = results.map((result, idx) => {
+    const ev = result.eval;
+    const latestText = ev.latestBroken.eligible ? `最新倒前連勝 ${ev.latestBroken.len} 期` : '最新未倒';
+    return `
+      <button class="candidate-box secondary" data-group="${containerId}" data-index="${idx}">
+        <h4>${titlePrefix} ${idx+1}</h4>
+        <div class="small">過關 ${ev.hit3}/${ev.rows.length}｜4碰 ${ev.hit4}｜最新往前連勝 ${ev.latestWinStreak}｜${latestText}</div>
+        <div class="small mono">柱1 ${result.partition[0].slice().sort((a,b)=>a-b).map(pad2).join(' ')}</div>
+      </button>`;
+  }).join('');
+  container.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = Number(btn.dataset.index);
+      const source = btn.dataset.group;
+      const group = lastResults[source];
+      const picked = group[idx];
+      const keyMap = { overallCandidates:'overall', streakCandidates:'streak', brokenCandidates:'broken' };
+      renderGroupResult(keyMap[source], picked);
+      if (summaryId) $(summaryId).textContent = buildSummaryLines(picked, source).join('\n');
+    });
+  });
+}
+
 function runOptimize() {
   try {
     refreshPoolInfo();
@@ -309,18 +704,74 @@ function runOptimize() {
     if (pool.length !== target) throw new Error(`剩餘球池 ${pool.length} 顆，與柱型總數 ${target} 不相符。請調整排除號碼或柱型。`);
     const draws = parseDraws($('draws').value, drawCount, totalBalls);
     if (!draws.length) throw new Error('請先貼上歷史開獎號碼。');
-    const badLine = draws.findIndex(draw => draw.some(n => excludedSet.has(n)));
-    if (badLine >= 0) throw new Error(`第 ${badLine+1} 期開獎號中包含排除號碼。排除區是給你建立球池用的，不該把實際開出的號碼從世界中刪掉。請重新確認玩法設定。`);
-    $('summary').textContent = '運算中，請稍候...';
-    $('verifyBody').innerHTML = '';
-    setTimeout(() => { const result = optimize(pool, draws, sizes, iterations); renderResult(result); }, 30);
-  } catch (err) { $('summary').textContent = `錯誤：${err.message}`; $('verifyBody').innerHTML = ''; }
+
+    $('summaryOverall').textContent = '運算中，請稍候...';
+    $('summaryStreak').textContent = '運算中，請稍候...';
+    $('summaryBroken').textContent = '運算中，請稍候...';
+    $('overallCandidates').innerHTML = '';
+    $('streakCandidates').innerHTML = '';
+    $('brokenCandidates').innerHTML = '';
+    ['overallVerifyBody','streakVerifyBody','brokenVerifyBody'].forEach(id => $(id).innerHTML = '');
+    ['overallVoiceStatus','streakVoiceStatus','brokenVoiceStatus'].forEach(id => $(id).textContent = '尚未播放');
+
+    setTimeout(() => {
+      const result = optimizeMultiObjective(pool, draws, sizes, iterations);
+      lastResults = {
+        overallCandidates: result.overallTies,
+        streakCandidates: result.streakTies,
+        brokenCandidates: result.brokenTies
+      };
+
+      const overallFirst = result.overallTies[0] || result.best;
+      const streakFirst = result.streakTies[0] || result.best;
+      const brokenFirst = result.brokenTies[0] || null;
+
+      $('summaryOverall').textContent = buildSummaryLines(overallFirst, 'overallCandidates').join('\n');
+      $('summaryStreak').textContent = buildSummaryLines(streakFirst, 'streakCandidates').join('\n');
+      $('summaryBroken').textContent = brokenFirst ? buildSummaryLines(brokenFirst, 'brokenCandidates').join('\n') : '找不到符合「最新一期為倒」條件的候選。代表目前搜尋到的強勢柱型在最新一期仍然過關，或樣本內沒有探索到符合條件的更佳解。';
+
+      renderCandidateList('overallCandidates', '整體最佳候選', result.overallTies, 'summaryOverall', '無');
+      renderCandidateList('streakCandidates', '最新往前連勝候選', result.streakTies, 'summaryStreak', '無');
+      renderCandidateList('brokenCandidates', '最新倒前長連勝候選', result.brokenTies, 'summaryBroken', '本次搜尋沒有找到符合「最新一期為倒」的最佳候選。');
+
+      renderGroupResult('overall', overallFirst);
+      renderGroupResult('streak', streakFirst);
+      if (brokenFirst) renderGroupResult('broken', brokenFirst);
+    }, 30);
+  } catch (err) {
+    $('summaryOverall').textContent = `錯誤：${err.message}`;
+    $('summaryStreak').textContent = `錯誤：${err.message}`;
+    $('summaryBroken').textContent = `錯誤：${err.message}`;
+    ['overallVerifyBody','streakVerifyBody','brokenVerifyBody'].forEach(id => $(id).innerHTML = '');
+  }
 }
+
 $('mode').addEventListener('change', updateModeDefaults);
 ['totalBalls','drawCount','col1','col2','col3','exclude'].forEach(id => $(id).addEventListener('input', refreshPoolInfo));
 $('runBtn').addEventListener('click', runOptimize);
 $('sampleBtn').addEventListener('click', () => { $('mode').value = 'f39'; updateModeDefaults(); $('draws').value = sample100; });
-$('clearBtn').addEventListener('click', () => { $('draws').value = ''; $('exclude').value = ''; $('summary').textContent = '尚未運算'; $('verifyBody').innerHTML = ''; $('col1Nums').innerHTML = ''; $('col2Nums').innerHTML = ''; $('col3Nums').innerHTML = ''; refreshPoolInfo(); });
+[['overall','overall'],['streak','streak'],['broken','broken']].forEach(([key,prefix]) => {
+  $(prefix + 'SpeakAllBtn').addEventListener('click', () => speakAllColumns(key));
+  $(prefix + 'SpeakCol1Btn').addEventListener('click', () => speakCurrentColumn(key, 0));
+  $(prefix + 'SpeakCol2Btn').addEventListener('click', () => speakCurrentColumn(key, 1));
+  $(prefix + 'SpeakCol3Btn').addEventListener('click', () => speakCurrentColumn(key, 2));
+  $(prefix + 'StopSpeakBtn').addEventListener('click', () => stopSpeech(key));
+});
+$('clearBtn').addEventListener('click', () => {
+  $('draws').value = '';
+  $('exclude').value = '';
+  $('summaryOverall').textContent = '尚未運算';
+  $('summaryStreak').textContent = '尚未運算';
+  $('summaryBroken').textContent = '尚未運算';
+  ['overallVerifyBody','streakVerifyBody','brokenVerifyBody'].forEach(id => $(id).innerHTML = '');
+  ['overallCol1Nums','overallCol2Nums','overallCol3Nums','streakCol1Nums','streakCol2Nums','streakCol3Nums','brokenCol1Nums','brokenCol2Nums','brokenCol3Nums'].forEach(id => $(id).innerHTML = '');
+  ['overallCandidates','streakCandidates','brokenCandidates'].forEach(id => $(id).innerHTML = '');
+  ['overallVoiceStatus','streakVoiceStatus','brokenVoiceStatus'].forEach(id => $(id).textContent = '尚未播放');
+  lastResults = { overallCandidates:[], streakCandidates:[], brokenCandidates:[] };
+  activeGroupResults = { overall:null, streak:null, broken:null };
+  stopSpeech(currentSpeechGroup);
+  refreshPoolInfo();
+});
 updateModeDefaults();
 </script>
 </body>
