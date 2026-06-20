@@ -1,6 +1,27 @@
 {
   "title": "【天天樂遺漏比對】",
-  "matched": [],
-  "updated_at": "2026-06-19 22:07 UTC",
-  "error": "次數資料錯誤：HTTPSConnectionPool(host='www.calotteryx.com', port=443): Read timed out. (read timeout=10)；"
+  "matched": [
+    {
+      "number": "20",
+      "miss": 69
+    },
+    {
+      "number": "27",
+      "miss": 45
+    },
+    {
+      "number": "32",
+      "miss": 48
+    },
+    {
+      "number": "36",
+      "miss": 46
+    },
+    {
+      "number": "38",
+      "miss": 67
+    }
+  ],
+  "updated_at": "2026-06-20 22:13 UTC",
+  "error": null
 }
