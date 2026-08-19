@@ -2,22 +2,22 @@
   "title": "【天天樂遺漏比對】",
   "matched": [
     {
-      "number": "19",
-      "miss": 50
+      "number": "21",
+      "miss": 61
     },
     {
-      "number": "27",
-      "miss": 49
+      "number": "26",
+      "miss": 51
     },
     {
-      "number": "29",
-      "miss": 75
+      "number": "30",
+      "miss": 60
     },
     {
-      "number": "38",
-      "miss": 53
+      "number": "36",
+      "miss": 56
     }
   ],
-  "updated_at": "2026-08-18 21:27 UTC",
+  "updated_at": "2026-08-19 21:28 UTC",
   "error": null
 }
