@@ -1,27 +1,6 @@
 {
   "title": "【天天樂遺漏比對】",
-  "matched": [
-    {
-      "number": "21",
-      "miss": 42
-    },
-    {
-      "number": "25",
-      "miss": 55
-    },
-    {
-      "number": "33",
-      "miss": 47
-    },
-    {
-      "number": "37",
-      "miss": 49
-    },
-    {
-      "number": "39",
-      "miss": 37
-    }
-  ],
-  "updated_at": "2026-09-12 22:54 UTC",
-  "error": null
+  "matched": [],
+  "updated_at": "2026-09-13 23:00 UTC",
+  "error": "次數資料錯誤：HTTPSConnectionPool(host='www.calotteryx.com', port=443): Max retries exceeded with url: /Fantasy-5/latest-50-draws/order-by-ranks/frequency-chart.htm (Caused by NewConnectionError(\"HTTPSConnection(host='www.calotteryx.com', port=443): Failed to establish a new connection: [Errno 111] Connection refused\"))；"
 }
