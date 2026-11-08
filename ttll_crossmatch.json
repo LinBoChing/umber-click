@@ -1,6 +1,6 @@
 {
   "title": "【天天樂遺漏比對】",
   "matched": [],
-  "updated_at": "2026-11-07 00:44 UTC",
-  "error": "次數資料錯誤：HTTPSConnectionPool(host='www.calotteryx.com', port=443): Max retries exceeded with url: /Fantasy-5/latest-50-draws/order-by-ranks/frequency-chart.htm (Caused by ConnectTimeoutError(<HTTPSConnection(host='www.calotteryx.com', port=443) at 0x7fad2cc0d890>, 'Connection to www.calotteryx.com timed out. (connect timeout=10)'))；"
+  "updated_at": "2026-11-08 00:16 UTC",
+  "error": "次數資料錯誤：HTTPSConnectionPool(host='www.calotteryx.com', port=443): Max retries exceeded with url: /Fantasy-5/latest-50-draws/order-by-ranks/frequency-chart.htm (Caused by ConnectTimeoutError(<HTTPSConnection(host='www.calotteryx.com', port=443) at 0x7f932cc75a10>, 'Connection to www.calotteryx.com timed out. (connect timeout=10)'))；"
 }
