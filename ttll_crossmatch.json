@@ -1,6 +1,6 @@
 {
   "title": "【天天樂遺漏比對】",
   "matched": [],
-  "updated_at": "2026-11-15 00:52 UTC",
+  "updated_at": "2026-11-16 00:51 UTC",
   "error": "遺漏表格未找到；次數資料錯誤：HTTPSConnectionPool(host='www.calotteryx.com', port=443): Max retries exceeded with url: /Fantasy-5/latest-50-draws/order-by-ranks/frequency-chart.htm (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self-signed certificate (_ssl.c:1018)')))；"
 }
